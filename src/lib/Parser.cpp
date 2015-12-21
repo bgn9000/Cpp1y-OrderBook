@@ -2,6 +2,10 @@
 
 #include "Decoder.h"
 
+// action,orderid,side,quantity,price
+// action = A (add), X (remove), M (modify)
+// side = B (buy), S (sell)
+// if action = T (Trade) : action,quantity,price
 bool Parser::parse(const std::string& str, const int verbose)
 {
     const auto len = str.size();
@@ -18,7 +22,6 @@ bool Parser::parse(const std::string& str, const int verbose)
                 if (verbose > 0) std::cerr << "Bad comment in [" << str << "]" << std::endl;
                 return false;
             }
-//std::cerr << "firstField true" << std::endl;
             return true;
         }
         if (verbose > 1) std::cerr << "firstField false : " << str << std::endl;
@@ -73,6 +76,7 @@ bool Parser::parse(const std::string& str, const int verbose)
     
     auto extractOrderId = [&]() -> bool
     {
+        if (unlikely(static_cast<char>(Action::TRADE) == action_)) { --i; return true; }
         auto j = i, start = 0U, end = 0U;
         for (; j < len; ++j)
         {
@@ -110,6 +114,7 @@ bool Parser::parse(const std::string& str, const int verbose)
     
     auto extractSide = [&]() -> bool
     {
+        if (unlikely(static_cast<char>(Action::TRADE) == action_)) { --i; return true; }
         for (; i < len; ++i)
         {
             if (likely(' ' != str[i]))

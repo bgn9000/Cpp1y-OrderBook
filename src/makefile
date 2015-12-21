@@ -1,4 +1,4 @@
-DIRS:=lib bin
+DIRS:=lib bin test
 
 .PHONY: all clean test
 

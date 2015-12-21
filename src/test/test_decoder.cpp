@@ -110,16 +110,15 @@ int main()
         ret = Decoder::retreive_float<double>(buf, size);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
+
+        double diff = ret - d;
         
-/*      double diff = ret - d;
-        std::cerr << std::fixed << std::setprecision(std::numeric_limits<double>::digits10) 
-            << "buf [" << buf << "] and d [" << d << "] ret [" << ret << "] diff [" << diff << "]"
-            << std::endl;
-        RC_ASSERT(diff < std::pow(10, -5));*/
+        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<double>::digits10) 
+            << "buf [" << buf << "] and d [" << d << "] ret [" << ret << "] diff [" << diff << "]" << std::endl;
         
         ++nbTests;
         
-        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<double>::digits10));
+        RC_ASSERT(diff < std::pow(10, -std::numeric_limits<double>::digits10));
     });
     if (nbTests)
     {

@@ -6,7 +6,7 @@ endif
 
 .PHONY: all clean test
 
-TARGET:=FeedHandler
+TARGET:=FeedHandler.out
 SOURCES:=$(shell ls *.cpp)
 OBJ_DIR=obj
 OBJECTS:=$(addprefix $(OBJ_DIR)/, $(SOURCES:.cpp=.o))
