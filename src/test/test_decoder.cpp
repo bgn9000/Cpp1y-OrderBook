@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include <chrono>
+using namespace common;
 using namespace std::chrono;
 
 //#include <boost/lexical_cast.hpp>
@@ -43,7 +44,7 @@ int main()
     
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Parse unsigned integer", [&](unsigned int i) 
+    rc::check("Parse Quantity", [&](Quantity i) 
     {
         auto str = std::to_string(i);
         
@@ -54,7 +55,7 @@ int main()
 //        RC_ASSERT(ret == i);
 
         start = high_resolution_clock::now();
-        ret = Decoder::retreive_unsigned_integer<unsigned int>(str.c_str(), str.length());
+        ret = Decoder::retreive_unsigned_integer<Quantity>(str.c_str(), str.length());
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
         
@@ -64,13 +65,13 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Parse unsigned integer perfs : std::stoul [" << time_span1/nbTests
+        std::cout << "Parse Quantity perfs : std::stoul [" << time_span1/nbTests
             << "] Decoder::retreive_unsigned_integer [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Convert integer to string", [&](unsigned int i) 
+    rc::check("Convert Quantity to string", [&](Quantity i) 
     {
         high_resolution_clock::time_point start = high_resolution_clock::now();
         auto str = std::to_string(i);
@@ -79,7 +80,7 @@ int main()
         
         start = high_resolution_clock::now();
         char buf[64] = {};
-        auto len = Decoder::convert_unsigned_integer<unsigned int>(i, buf);
+        auto len = Decoder::convert_unsigned_integer<Quantity>(i, buf);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
         
@@ -89,57 +90,57 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Convert integer to string perfs : std::to_string [" << time_span1/nbTests
+        std::cout << "Convert Quantity to string perfs : std::to_string [" << time_span1/nbTests
             << "] Decoder::convert_unsigned_integer [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Parse double", [&](double d)
+    rc::check("Parse Price", [&](Price d)
     {
         char buf[64] = {};
-        size_t size = Decoder::convert_float<double>(buf, d, std::numeric_limits<double>::digits10);
+        size_t size = Decoder::convert_float<Price>(buf, d, std::numeric_limits<Price>::digits10);
 
         high_resolution_clock::time_point start = high_resolution_clock::now();
         auto ret = std::stod(std::string(buf, size));
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-//        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<double>::digits10));
+//        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<Price>::digits10));
         
         start = high_resolution_clock::now();
-        ret = Decoder::retreive_float<double>(buf, size);
+        ret = Decoder::retreive_float<Price>(buf, size);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
 
-        double diff = ret - d;
+        Price diff = ret - d;
         
-        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<double>::digits10) 
+        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10) 
             << "buf [" << buf << "] and d [" << d << "] ret [" << ret << "] diff [" << diff << "]" << std::endl;
         
         ++nbTests;
         
-        RC_ASSERT(diff < std::pow(10, -std::numeric_limits<double>::digits10));
+        RC_ASSERT(diff < std::pow(10, -std::numeric_limits<Price>::digits10));
     });
     if (nbTests)
     {
-        std::cout << "Parse double perfs : std::stod [" << time_span1/nbTests
+        std::cout << "Parse Price perfs : std::stod [" << time_span1/nbTests
             << "] Decoder::retreive_float [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
 
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Convert double to string", [&](double d) 
+    rc::check("Convert Price to string", [&](Price d) 
     {
         high_resolution_clock::time_point start = high_resolution_clock::now();
 //        auto str = std::to_string(d); // only 6 digits precision
         char buf[64] = {};
-        sprintf(buf, "%.*e", std::numeric_limits<double>::digits10, d);
+        sprintf(buf, "%.*e", std::numeric_limits<Price>::digits10, d);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
         char buf2[64] = {};
-        size_t size = Decoder::convert_float<double>(buf2, d, std::numeric_limits<double>::digits10);
+        size_t size = Decoder::convert_float<Price>(buf2, d, std::numeric_limits<Price>::digits10);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
 
@@ -149,7 +150,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Convert double to string perfs : sprintf [" << time_span1/nbTests
+        std::cout << "Convert Price to string perfs : sprintf [" << time_span1/nbTests
             << "] Decoder::convert_float [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     return 0;

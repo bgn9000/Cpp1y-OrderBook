@@ -6,10 +6,9 @@ endif
 
 .PHONY: all clean test
 
-TARGET:=FeedHandler.out
-SOURCES:=$(shell ls *.cpp)
+TARGET:=FeedHandler
+LIB:=lib$(TARGET).a
 OBJ_DIR=obj
-OBJECTS:=$(addprefix $(OBJ_DIR)/, $(SOURCES:.cpp=.o))
 
 INCS=-I. -I../lib
 
@@ -20,19 +19,23 @@ ifneq "" "$(findstring $(sanitize), 1 on On ON)"
     CFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null 
 endif
 
-LIBS = -L ../lib -lTools -latomic -lz -lnsl -lpthread -ldl -lrt
+LIBS = $(LIB) -L ../lib -lTools -latomic -lz -lnsl -lpthread -ldl -lrt
 
 test: all
-all: $(TARGET)
+all: $(TARGET).out
 
-$(TARGET):$(OBJECTS) ../lib/libTools.a
-	g++ -Wall -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
+$(TARGET).out: $(OBJ_DIR)/main.o $(LIB) ../lib/libTools.a
+	g++ -Wall -o $@ $(OBJ_DIR)/main.o $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f $(OBJ_DIR)/*.o
-	rm -f $(TARGET)
+	rm -rf $(OBJ_DIR)/*.o
+	rm -f $(TARGET).out
+	rm -f lib$(TARGET).a
+	
+$(LIB): $(OBJ_DIR)/$(TARGET).o
+	ar -r $@ $<
 
-$(OBJ_DIR)/%.o : %.cpp
+$(OBJ_DIR)/%.o : %.cpp %.h
 	@mkdir -p $(OBJ_DIR)
 	$(GCC) -fbuiltin -Wall -Werror -c -o $@ $< $(INCS) $(CFLAGS)
 

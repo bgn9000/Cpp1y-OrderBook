@@ -31,7 +31,7 @@ clean:
 	rm -f $(OBJ_DIR)/*.o
 	rm -f $(TARGET)
 
-$(OBJ_DIR)/%.o : %.cpp %.h
+$(OBJ_DIR)/%.o : %.cpp %.h Common.h
 	@mkdir -p $(OBJ_DIR)
 	$(GCC) -fbuiltin -Wall -Werror -c -o $@ $< $(INCS) $(CFLAGS)
 

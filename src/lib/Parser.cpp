@@ -104,7 +104,7 @@ bool Parser::parse(const std::string& str, const int verbose)
         i = j;
         if (end > start)
         {
-            orderId_ = Decoder::retreive_unsigned_integer<unsigned int>(&str[start], end-start);
+            orderId_ = Decoder::retreive_unsigned_integer<OrderId>(&str[start], end-start);
             if (verbose > 2) std::cerr << "extractOrderId true" << std::endl;
             return true;
         }
@@ -164,7 +164,7 @@ bool Parser::parse(const std::string& str, const int verbose)
         i = j;
         if (end > start)
         {
-            qty_ = Decoder::retreive_unsigned_integer<unsigned int>(&str[start], end-start);
+            qty_ = Decoder::retreive_unsigned_integer<Quantity>(&str[start], end-start);
             if (verbose > 2) std::cerr << "extractQty true" << std::endl;
             return true;
         }
@@ -213,14 +213,14 @@ bool Parser::parse(const std::string& str, const int verbose)
         {
             if (start) 
             {
-                price_ = Decoder::retreive_float<double>(&str[start], len-start);
+                price_ = Decoder::retreive_float<Price>(&str[start], len-start);
                 if (verbose > 2) std::cerr << "!!! extractPrice true : " << str << std::endl;
                 return true;
             }
         }
         else if (end > start)
         {
-            price_ = Decoder::retreive_float<double>(&str[start], end-start);
+            price_ = Decoder::retreive_float<Price>(&str[start], end-start);
             if (verbose > 2) std::cerr << "!!! extractPrice true : " << str << std::endl;
             return true;
         }
