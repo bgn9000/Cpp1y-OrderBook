@@ -3,7 +3,7 @@
 #include "Common.h"
 
 #include <tuple>
-#include <map>
+#include <unordered_map>
 #include <deque>
 
 using namespace common;
@@ -17,11 +17,23 @@ public:
     void printCurrentOrderBook(std::ostream& os) const {}
     
 private:
-    using Limit = std::tuple<Quantity, Price>;
-    std::deque<Limit> buys, sells;
+    using Order = std::tuple<Quantity, Price>;
+    using Limit = Order;
+    static Quantity& getQty(Order& order) { return std::get<0>(order); }
+    static Price& getPrice(Order& order) { return std::get<1>(order); }
     
-    using Order = std::tuple<LimitNum, char, Quantity, Price>;
-    std::map<OrderId, Order> orders;
+    bool NewBuyOrder(OrderId orderId, Order&& order);
+    bool NewSellOrder(OrderId orderId, Order&& order);
+    
+    bool CancelBuyOrder(OrderId orderId, Order&& order);
+    bool CancelSellOrder(OrderId orderId, Order&& order);
+    
+    bool ModifyBuyOrder(OrderId orderId, Order&& order);
+    bool ModifySellOrder(OrderId orderId, Order&& order);
+    
+private:
+    std::deque<Limit> bids_, asks_;
+    std::unordered_map<OrderId, Order> buyOrders_, sellOrders_;
 };
 
 

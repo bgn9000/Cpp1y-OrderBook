@@ -9,7 +9,7 @@ endif
 SOURCES:=$(shell ls *.cpp)
 TARGETS:=$(SOURCES:.cpp=.out)
 
-INCS=-I../lib -I../../tools/rapidcheck/include
+INCS=-I../lib -I../bin -I../../tools/rapidcheck/include
 
 CFLAGS=-O2 -m64 -fPIC -g -ggdb -Wno-unused-but-set-variable -Wno-unused-variable
 CFLAGS += -std=c++1y -D_REENTRANT -DLinux 
@@ -18,7 +18,7 @@ ifneq "" "$(findstring $(sanitize), 1 on On ON)"
     CFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null 
 endif
 
-LIBS = -L ../lib -lTools -L ../../tools/rapidcheck/build -lrapidcheck -latomic -lz -lnsl -lpthread -ldl -lrt
+LIBS = -L ../lib -lTools -L ../bin -lFeedHandler -L ../../tools/rapidcheck/build -lrapidcheck -latomic -lz -lnsl -lpthread -ldl -lrt
 
 all: $(TARGETS)
 
