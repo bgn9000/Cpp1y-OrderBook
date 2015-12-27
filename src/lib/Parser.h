@@ -24,11 +24,11 @@ public:
 public:
     bool parse(const std::string& str, const int verbose = 0);
     
-    char getAction() { return action_; }
-    OrderId getOrderId() { return orderId_; }
-    char getSide() { return side_; }
-    Price getPrice() { return price_; }
-    Quantity getQty() { return qty_; }
+    auto getAction() { return action_; }
+    auto getOrderId() { return orderId_; }
+    auto getSide() { return side_; }
+    auto getPrice() { return price_; }
+    auto getQty() { return qty_; }
     
 private:
     char action_ = 0;

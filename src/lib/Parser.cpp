@@ -35,7 +35,7 @@ bool Parser::parse(const std::string& str, const int verbose)
             if (likely(',' == str[i])) 
             { 
                 ++i;
-                if (verbose > 2) std::cerr << "nextField true" << std::endl;
+                if (unlikely(verbose > 2)) std::cerr << "nextField true" << std::endl;
                 return true;
             }
             else if (unlikely(' ' != str[i]))
@@ -66,7 +66,7 @@ bool Parser::parse(const std::string& str, const int verbose)
                     return false;
                 }
                 ++i;
-                if (verbose > 2) std::cerr << "extractAction true" << std::endl;
+                if (unlikely(verbose > 2)) std::cerr << "extractAction true" << std::endl;
                 return true;
             }
         }
@@ -105,7 +105,12 @@ bool Parser::parse(const std::string& str, const int verbose)
         if (end > start)
         {
             orderId_ = Decoder::retreive_unsigned_integer<OrderId>(&str[start], end-start);
-            if (verbose > 2) std::cerr << "extractOrderId true" << std::endl;
+            if (unlikely(0 == orderId_))
+            {
+                if (verbose > 0) std::cerr << "Expected non zero orderId in [" << str << "]" << std::endl;
+                return false;
+            }
+            if (unlikely(verbose > 2)) std::cerr << "extractOrderId true" << std::endl;
             return true;
         }
         if (verbose > 1) std::cerr << "extractOrderId false : " << str << std::endl;
@@ -127,7 +132,7 @@ bool Parser::parse(const std::string& str, const int verbose)
                     return false;
                 }
                 ++i;
-                if (verbose > 2) std::cerr << "extractSide true" << std::endl;
+                if (unlikely(verbose > 2)) std::cerr << "extractSide true" << std::endl;
                 return true;
             }
         }
@@ -165,7 +170,12 @@ bool Parser::parse(const std::string& str, const int verbose)
         if (end > start)
         {
             qty_ = Decoder::retreive_unsigned_integer<Quantity>(&str[start], end-start);
-            if (verbose > 2) std::cerr << "extractQty true" << std::endl;
+            if (unlikely(0 == qty_))
+            {
+                if (verbose > 0) std::cerr << "Expected non zero qty in [" << str << "]" << std::endl;
+                return false;
+            }
+            if (unlikely(verbose > 2)) std::cerr << "extractQty true" << std::endl;
             return true;
         }
         if (verbose > 1) std::cerr << "extractQty false : " << str << std::endl;
@@ -214,14 +224,24 @@ bool Parser::parse(const std::string& str, const int verbose)
             if (start) 
             {
                 price_ = Decoder::retreive_float<Price>(&str[start], len-start);
-                if (verbose > 2) std::cerr << "!!! extractPrice true : " << str << std::endl;
+                if (unlikely(0.0 == price_))
+                {
+                    if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
+                    return false;
+                }
+                if (unlikely(verbose > 2)) std::cerr << "!!! extractPrice true : " << str << std::endl;
                 return true;
             }
         }
         else if (end > start)
         {
             price_ = Decoder::retreive_float<Price>(&str[start], end-start);
-            if (verbose > 2) std::cerr << "!!! extractPrice true : " << str << std::endl;
+            if (unlikely(0.0 == price_))
+            {
+                if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
+                return false;
+            }
+            if (unlikely(verbose > 2)) std::cerr << "!!! extractPrice true : " << str << std::endl;
             return true;
         }
         if (verbose > 1) std::cerr << "extractPrice false : " << str << std::endl;
