@@ -11,7 +11,10 @@ using namespace common;
 class FeedHandler
 {    
 public:
-    FeedHandler() {}
+    FeedHandler() = default;
+    ~FeedHandler() = default;
+    FeedHandler(const FeedHandler&) = delete;
+    FeedHandler& operator=(const FeedHandler&) = delete;
 
     bool processMessage(const std::string& line);
     void printCurrentOrderBook(std::ostream& os) const {}

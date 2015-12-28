@@ -88,8 +88,8 @@ namespace Decoder
             ++pos;
         }
 
-        long long integerPart = (long long)val;
-        val -= integerPart;
+        long long integerPart = static_cast<long long>(val);
+        val -= static_cast<T>(integerPart);
 
         long long decimalMax = 1;
         for (int tmp = precision; tmp > 0; --tmp)
@@ -97,7 +97,7 @@ namespace Decoder
             val *= 10;
             decimalMax *= 10;
         }
-        val += 0.5;
+        val += 0.5f;
 
         long long decimal = (long long)val;
         // overflow?

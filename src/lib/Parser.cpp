@@ -1,6 +1,7 @@
 #include "Parser.h"
 
 #include "Decoder.h"
+#include "StrStream.h"
 
 // action,orderid,side,quantity,price
 // action = A (add), X (remove), M (modify)

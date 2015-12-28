@@ -35,7 +35,7 @@ clean:
 $(LIB): $(OBJ_DIR)/$(TARGET).o
 	ar -r $@ $<
 
-$(OBJ_DIR)/%.o : %.cpp %.h
+$(OBJ_DIR)/%.o : %.cpp
 	@mkdir -p $(OBJ_DIR)
 	$(GCC) -fbuiltin -Wall -Werror -c -o $@ $< $(INCS) $(CFLAGS)
 

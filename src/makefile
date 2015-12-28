@@ -11,3 +11,8 @@ clean:
 	@for dir in $(DIRS); do  \
 	    make -C $$dir clean || exit 1;    \
 	done
+
+test:
+	@for dir in $(DIRS); do  \
+	    make -C $$dir test || exit 1;    \
+	done

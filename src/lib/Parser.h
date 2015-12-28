@@ -22,6 +22,11 @@ public:
     };
     
 public:
+    Parser() = default;
+    ~Parser() = default;
+    Parser(const Parser&) = delete;
+    Parser& operator=(const Parser&) = delete;
+    
     bool parse(const std::string& str, const int verbose = 0);
     
     auto getAction() { return action_; }

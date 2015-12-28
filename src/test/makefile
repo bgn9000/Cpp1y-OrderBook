@@ -18,7 +18,7 @@ ifneq "" "$(findstring $(sanitize), 1 on On ON)"
     CFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null 
 endif
 
-LIBS = -L ../lib -lTools -L ../bin -lFeedHandler -L ../../tools/rapidcheck/build -lrapidcheck -latomic -lz -lnsl -lpthread -ldl -lrt
+LIBS = -L ../bin -lFeedHandler -L ../lib -lTools -L ../../tools/rapidcheck/build -lrapidcheck -latomic -lz -lnsl -lpthread -ldl -lrt
 
 all: $(TARGETS)
 

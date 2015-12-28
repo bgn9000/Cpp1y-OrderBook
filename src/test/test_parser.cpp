@@ -106,7 +106,7 @@ int main(int argc, char **argv)
             RC_ASSERT(side == parser.getSide());
             RC_ASSERT(qty == parser.getQty());
             RC_ASSERT(price - parser.getPrice() < std::pow(10, -std::numeric_limits<Price>::digits10));
-            RC_ASSERT(ret == true);
+            RC_ASSERT(true == ret);
         };
         
         test_parse();
@@ -426,7 +426,7 @@ int main(int argc, char **argv)
             RC_ASSERT(action == parser.getAction());
             RC_ASSERT(qty == parser.getQty());
             RC_ASSERT(price - parser.getPrice() < std::pow(10, -std::numeric_limits<Price>::digits10));
-            RC_ASSERT(ret == true);
+            RC_ASSERT(true == ret);
         };
         
         test_parse();
