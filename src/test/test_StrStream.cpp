@@ -1,0 +1,119 @@
+#include <rapidcheck.h>
+
+#include "StrStream.h"
+
+#include <sstream>
+
+#include <chrono>
+using namespace std::chrono;
+
+int main()
+{
+    auto time_span1 = 0ULL, time_span2 = 0ULL;
+    auto nbTests = 0U;
+    rc::check("Append a string to a string (< 512 characters)", [&](std::string strOrigin, std::string strToAppend) 
+    {
+        auto len = strOrigin.length() + strToAppend.length();
+        while (len > FiniteStr<>::capacity())
+        {
+            strOrigin = *rc::gen::arbitrary<std::string>();
+            strToAppend = *rc::gen::arbitrary<std::string>();
+            len = strOrigin.length() + strToAppend.length();
+        }
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        StrStream strstream;
+        strstream.append(strOrigin.c_str(), strOrigin.length());
+        strstream.append(strToAppend.c_str(), strToAppend.length());
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        time_span1 += duration_cast<nanoseconds>(end - start).count();
+        
+        start = high_resolution_clock::now();
+        std::string str(strOrigin);
+        str += strToAppend;
+        end = high_resolution_clock::now();
+        time_span2 += duration_cast<nanoseconds>(end - start).count();
+        
+        ++nbTests;
+        
+        RC_ASSERT(strstream.c_str() == str);
+    });
+    if (nbTests)
+    {
+        std::cout << "Append a string to a string (< 512 characters) perfs  [" << time_span1/nbTests << "] std::string [" 
+            << time_span2/nbTests << "] (in ns)" << std::endl;
+    }
+    
+    time_span1 = 0ULL, time_span2 = 0ULL;
+    nbTests = 0U;
+    rc::check("Append an unsigned int to a string (< 512 characters)", [&](std::string strOrigin, const unsigned int intToAppend) 
+    {
+        auto len = strOrigin.length();
+        while (len > FiniteStr<>::capacity() - 64)
+        {
+            strOrigin = *rc::gen::arbitrary<std::string>();
+            len = strOrigin.length();
+        }
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        StrStream strstream;
+        strstream.append(strOrigin.c_str(), strOrigin.length());
+        strstream << intToAppend;
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        time_span1 += duration_cast<nanoseconds>(end - start).count();
+        
+        start = high_resolution_clock::now();
+        std::stringstream sstr;
+        sstr << strOrigin;
+        sstr << intToAppend;
+        end = high_resolution_clock::now();
+        time_span2 += duration_cast<nanoseconds>(end - start).count();
+        
+        ++nbTests;
+        
+        RC_ASSERT(strstream.c_str() == sstr.str());
+    });
+    if (nbTests)
+    {
+        std::cout << "Append an unsigned int to a string (< 512 characters) perfs  [" << time_span1/nbTests << "] std::stringstream [" 
+            << time_span2/nbTests << "] (in ns)" << std::endl;
+    }
+    
+    time_span1 = 0ULL, time_span2 = 0ULL;
+    nbTests = 0U;
+    rc::check("Append a double to a string (< 512 characters)", [&](std::string strOrigin) 
+    {
+        const auto doubleToAppend = *rc::gen::positive<double>();
+        
+        auto len = strOrigin.length();
+        while (len > FiniteStr<>::capacity() - 64)
+        {
+            strOrigin = *rc::gen::arbitrary<std::string>();
+            len = strOrigin.length();
+        }
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        StrStream strstream;
+        strstream.append(strOrigin.c_str(), strOrigin.length());
+        strstream << doubleToAppend;
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        time_span1 += duration_cast<nanoseconds>(end - start).count();
+        
+        start = high_resolution_clock::now();
+        std::stringstream sstr;
+        sstr << std::fixed << std::setprecision(std::numeric_limits<double>::digits10) << strOrigin;
+        sstr << doubleToAppend;
+        end = high_resolution_clock::now();
+        time_span2 += duration_cast<nanoseconds>(end - start).count();
+        
+        ++nbTests;
+        
+//        RC_ASSERT(strstream.c_str() == sstr.str());
+    });
+    if (nbTests)
+    {
+        std::cout << "Append a double int to a string (< 512 characters) perfs  [" << time_span1/nbTests << "] std::stringstream [" 
+            << time_span2/nbTests << "] (in ns)" << std::endl;
+    }
+}
+

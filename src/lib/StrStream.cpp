@@ -34,12 +34,6 @@ void StrStream::append(const char* str, size_t len)
     }
 }
 
-StrStream& StrStream::operator<<(const StrStream& strstr)
-{
-    append(strstr.c_str(), strstr.length());
-    return *this;
-}
-
 StrStream& StrStream::operator<<(const char* str)
 {
     append(str, strlen(str));
@@ -71,6 +65,12 @@ StrStream& StrStream::operator<<(char c)
             strOver_[sizeOver_]=0;
         }
     }
+    return *this;
+}
+
+StrStream& StrStream::operator<<(const StrStream& strstr)
+{
+    append(strstr.c_str(), strstr.length());
     return *this;
 }
 

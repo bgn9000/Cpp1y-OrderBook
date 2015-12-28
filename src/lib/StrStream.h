@@ -46,14 +46,13 @@ public:
     
     void append(const char* str, size_t len);
     
-    StrStream& operator<<(const StrStream& strstr);
-
     //AVOID THIS (use append (faster) or operator<< on const char*)
     StrStream& operator<<(const std::string& str) = delete;
     
     StrStream& operator<<(const char* str);
     StrStream& operator<<(char c);
     
+    StrStream& operator<<(const StrStream& strstr);
     StrStream& endl(StrStream& ostr)
     {
         ostr << '\n';
