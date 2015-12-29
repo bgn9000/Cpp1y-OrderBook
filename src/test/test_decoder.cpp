@@ -96,10 +96,11 @@ int main()
     
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Parse Price", [&](Price d)
+    rc::check("Parse Price", [&]()
     {
+        auto d = *rc::gen::positive<Price>();
         char buf[64] = {};
-        size_t size = Decoder::convert_float<Price>(buf, d, std::numeric_limits<Price>::digits10);
+        size_t size = Decoder::convert_unsigned_float<Price>(buf, d, std::numeric_limits<Price>::digits10);
 
         high_resolution_clock::time_point start = high_resolution_clock::now();
         auto ret = std::stod(std::string(buf, size));
@@ -108,7 +109,7 @@ int main()
 //        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<Price>::digits10));
         
         start = high_resolution_clock::now();
-        ret = Decoder::retreive_float<Price>(buf, size);
+        ret = Decoder::retreive_unsigned_float<Price>(buf, size);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
 
@@ -129,8 +130,10 @@ int main()
 
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Convert Price to string", [&](Price d) 
+    rc::check("Convert Price to string", [&]() 
     {
+        auto d = *rc::gen::positive<Price>();
+        
         high_resolution_clock::time_point start = high_resolution_clock::now();
 //        auto str = std::to_string(d); // only 6 digits precision
         char buf[64] = {};
@@ -140,7 +143,7 @@ int main()
         
         start = high_resolution_clock::now();
         char buf2[64] = {};
-        size_t size = Decoder::convert_float<Price>(buf2, d, std::numeric_limits<Price>::digits10);
+        size_t size = Decoder::convert_unsigned_float<Price>(buf2, d, std::numeric_limits<Price>::digits10);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
 

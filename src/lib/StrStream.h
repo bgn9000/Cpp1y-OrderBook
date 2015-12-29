@@ -53,11 +53,6 @@ public:
     StrStream& operator<<(char c);
     
     StrStream& operator<<(const StrStream& strstr);
-    StrStream& endl(StrStream& ostr)
-    {
-        ostr << '\n';
-        return ostr;
-    }
     
     StrStream& operator<<(std::ostream& ostr);
     friend std::ostream& operator<<(std::ostream&, const StrStream&);

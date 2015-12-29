@@ -20,7 +20,21 @@ public:
     auto getNbBids() { return bids_.size(); }
     auto getNbAsks() { return asks_.size(); }
     
-public:
+    inline bool newBuyOrder(OrderId orderId, Order&& order, const int verbose = 0)
+    { return FeedHandler::newBuyOrder(orderId, std::forward<Order>(order), verbose); }
+    inline bool newSellOrder(OrderId orderId, Order&& order, const int verbose = 0)
+    { return FeedHandler::newSellOrder(orderId, std::forward<Order>(order), verbose); }
+    
+    inline bool cancelBuyOrder(OrderId orderId, Order&& order, const int verbose = 0)
+    { return FeedHandler::cancelBuyOrder(orderId, std::forward<Order>(order), verbose); }
+    inline bool cancelSellOrder(OrderId orderId, Order&& order, const int verbose = 0)
+    { return FeedHandler::cancelSellOrder(orderId, std::forward<Order>(order), verbose); }
+    
+    inline bool modifyBuyOrder(OrderId orderId, Order&& order, const int verbose = 0)
+    { return FeedHandler::modifyBuyOrder(orderId, std::forward<Order>(order), verbose); }
+    inline bool modifySellOrder(OrderId orderId, Order&& order, const int verbose = 0)
+    { return FeedHandler::modifySellOrder(orderId, std::forward<Order>(order), verbose); }
+    
     std::map<OrderId, Order> buyOrders, sellOrders;    
     std::map<Price, int> uniqueBidPrices, uniqueAskPrices;
 };
@@ -122,12 +136,12 @@ int main(int argc, char **argv)
             << "BUY orderId [" << orderId << "] qty [" << qty << "] price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.NewBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose);
+        auto ret = FH.newBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.NewSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
+        RC_ASSERT(FH.newSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbSellOrders() == 0U);
         RC_ASSERT(FH.getNbBids() == FH.uniqueBidPrices.size());
@@ -162,12 +176,12 @@ int main(int argc, char **argv)
             << "SELL orderId [" << orderId << "] qty [" << qty << "] price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.NewSellOrder(orderId, FeedHandler::Order{qty, price}, verbose);
+        auto ret = FH.newSellOrder(orderId, FeedHandler::Order{qty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.NewSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
+        RC_ASSERT(FH.newSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
@@ -203,12 +217,12 @@ int main(int argc, char **argv)
             << "Add New BUY orderId [" << orderId << "] qty [" << qty << "] same price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.NewBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose);
+        auto ret = FH.newBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.NewSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
+        RC_ASSERT(FH.newSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
@@ -244,12 +258,12 @@ int main(int argc, char **argv)
             << "Add New SELL orderId [" << orderId << "] qty [" << qty << "] same price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.NewSellOrder(orderId, FeedHandler::Order{qty, price}, verbose);
+        auto ret = FH.newSellOrder(orderId, FeedHandler::Order{qty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.NewBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
+        RC_ASSERT(FH.newBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
@@ -277,12 +291,12 @@ int main(int argc, char **argv)
             << "Modify BUY orderId [" << orderId << "] new qty [" << newqty << "] price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.ModifyBuyOrder(orderId, FeedHandler::Order{newqty, price}, verbose);
+        auto ret = FH.modifyBuyOrder(orderId, FeedHandler::Order{newqty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.ModifySellOrder(orderId, FeedHandler::Order{newqty, price}, verbose) == false);
+        RC_ASSERT(FH.modifySellOrder(orderId, FeedHandler::Order{newqty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
@@ -310,12 +324,12 @@ int main(int argc, char **argv)
             << "Modify SELL orderId [" << orderId << "] new qty [" << newqty << "] price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.ModifySellOrder(orderId, FeedHandler::Order{newqty, price}, verbose);
+        auto ret = FH.modifySellOrder(orderId, FeedHandler::Order{newqty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.ModifyBuyOrder(orderId, FeedHandler::Order{newqty, price}, verbose) == false);
+        RC_ASSERT(FH.modifyBuyOrder(orderId, FeedHandler::Order{newqty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
@@ -352,12 +366,12 @@ int main(int argc, char **argv)
             << "Cancel BUY orderId [" << orderId << "] qty [" << qty << "] price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.CancelBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose);
+        auto ret = FH.cancelBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.CancelSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
+        RC_ASSERT(FH.cancelSellOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
@@ -396,12 +410,12 @@ int main(int argc, char **argv)
             << "Cancel ASK orderId [" << orderId << "] qty [" << qty << "] price [" << price << "]" << std::endl;
         
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = FH.CancelSellOrder(orderId, FeedHandler::Order{qty, price}, verbose);
+        auto ret = FH.cancelSellOrder(orderId, FeedHandler::Order{qty, price}, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         RC_ASSERT(true == ret);
-        RC_ASSERT(FH.CancelBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
+        RC_ASSERT(FH.cancelBuyOrder(orderId, FeedHandler::Order{qty, price}, verbose) == false);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbBuyOrders() == 0U);
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());

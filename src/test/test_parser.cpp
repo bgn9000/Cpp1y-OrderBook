@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
         char priceStr[64] = {};
-        len = Decoder::convert_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + orderIdStr + spaces(10) + ',' +
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
         char priceStr[64] = {};
-        len = Decoder::convert_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + '0' + spaces(10) + ',' +
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
         char priceStr[64] = {};
-        len = Decoder::convert_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
 
         std::string line;
         
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
         char priceStr[64] = {};
-        len = Decoder::convert_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
 
         std::string line;
         
@@ -389,7 +389,7 @@ int main(int argc, char **argv)
         auto len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
         char priceStr[64] = {};
-        len = Decoder::convert_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + qtyStr + spaces(10) + ',' +

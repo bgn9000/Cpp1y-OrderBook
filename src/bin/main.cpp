@@ -15,6 +15,7 @@ int main(int argc, char **argv)
         {
             feed.printCurrentOrderBook(std::cerr);
         }
+        feed.printMidQuotes(std::cout);
     }
     feed.printCurrentOrderBook(std::cout);
     return 0;

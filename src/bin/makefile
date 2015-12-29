@@ -4,7 +4,7 @@ else
     GCC=g++-5
 endif
 
-.PHONY: all clean test
+.PHONY: all clean
 
 TARGET:=FeedHandler
 LIB:=lib$(TARGET).a
@@ -21,7 +21,6 @@ endif
 
 LIBS = $(LIB) -L ../lib -lTools -latomic -lz -lnsl -lpthread -ldl -lrt
 
-test: all
 all: $(TARGET).out
 
 $(TARGET).out: $(OBJ_DIR)/main.o $(LIB) ../lib/libTools.a

@@ -78,15 +78,9 @@ namespace Decoder
     }
     
     template <typename T>
-    inline size_t convert_float(char* str, T val, int precision)
+    inline size_t convert_unsigned_float(char* str, T val, int precision)
     {
         int pos = 0;
-        if (val < 0)
-        {
-            val = -val;
-            str[pos] = '-';
-            ++pos;
-        }
 
         long long integerPart = static_cast<long long>(val);
         val -= static_cast<T>(integerPart);
@@ -97,7 +91,7 @@ namespace Decoder
             val *= 10;
             decimalMax *= 10;
         }
-        val += 0.5f;
+        val += static_cast<T>(0.5);
 
         long long decimal = (long long)val;
         // overflow?
@@ -191,27 +185,10 @@ namespace Decoder
     }
     
     template <typename T>
-    inline T retreive_float(const char* str, size_t size)
+    inline T retreive_unsigned_float(const char* str, size_t size)
     {
         if (size == 0) return 0;
-        
-        // sign
-        int coef = 1;
-        if (*str == '-')
-        {
-            coef = -1;
-            --size;
-            if (size == 0) return 0;
-            ++str;
-        }
-        else if (*str == '+')
-        {
-            coef = 1;
-            --size;
-            if (size == 0) return 0;
-            ++str;
-        }
-        
+                
         // Integer part
         long long integerPart = 0;
         for (; size && *str && *str != '.' ; --size, ++str)
@@ -241,6 +218,7 @@ namespace Decoder
 
             num += reminder;
         }
-        return num * coef;
+        return num;
     }
 }
+

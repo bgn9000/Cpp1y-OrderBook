@@ -224,7 +224,7 @@ bool Parser::parse(const std::string& str, const int verbose)
         {
             if (start) 
             {
-                price_ = Decoder::retreive_float<Price>(&str[start], len-start);
+                price_ = Decoder::retreive_unsigned_float<Price>(&str[start], len-start);
                 if (unlikely(0.0 == price_))
                 {
                     if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
@@ -236,7 +236,7 @@ bool Parser::parse(const std::string& str, const int verbose)
         }
         else if (end > start)
         {
-            price_ = Decoder::retreive_float<Price>(&str[start], end-start);
+            price_ = Decoder::retreive_unsigned_float<Price>(&str[start], end-start);
             if (unlikely(0.0 == price_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;

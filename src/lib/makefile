@@ -4,7 +4,7 @@ else
     GCC=g++-5
 endif
 
-.PHONY: all clean test
+.PHONY: all clean
 
 TARGET:=libTools.a
 
@@ -21,7 +21,6 @@ ifneq "" "$(findstring $(sanitize), 1 on On ON)"
     CFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null 
 endif
 
-test: all
 all: $(TARGET)
 
 $(TARGET):$(OBJECTS)

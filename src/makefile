@@ -1,4 +1,4 @@
-DIRS:=lib bin test
+DIRS:=lib bin
 
 .PHONY: all clean test
 
@@ -12,7 +12,5 @@ clean:
 	    make -C $$dir clean || exit 1;    \
 	done
 
-test:
-	@for dir in $(DIRS); do  \
-	    make -C $$dir test || exit 1;    \
-	done
+test: clean all
+	make -C test test || exit 1;

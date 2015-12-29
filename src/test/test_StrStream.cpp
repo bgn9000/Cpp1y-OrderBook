@@ -2,6 +2,7 @@
 
 #include "StrStream.h"
 
+#include <cmath>
 #include <sstream>
 
 #include <chrono>
@@ -84,7 +85,7 @@ int main()
     rc::check("Append a double to a string (< 512 characters)", [&](std::string strOrigin) 
     {
         const auto doubleToAppend = *rc::gen::positive<double>();
-        
+                
         auto len = strOrigin.length();
         while (len > FiniteStr<>::capacity() - 64)
         {
@@ -101,18 +102,25 @@ int main()
         
         start = high_resolution_clock::now();
         std::stringstream sstr;
-        sstr << std::fixed << std::setprecision(std::numeric_limits<double>::digits10) << strOrigin;
+        sstr << std::fixed /*<< std::setprecision(std::numeric_limits<double>::digits10)*/ << strOrigin;
         sstr << doubleToAppend;
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
         
+        RC_LOG() /*std::cout*/ << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10)
+            << "Append a double to a string (< 512 characters) doubleToAppend [" << doubleToAppend 
+            << "] strOrigin [" << strOrigin << "] strstream [" << strstream << "] stringstream [" << sstr.str()
+            << "]" << std::endl;
+        
         ++nbTests;
         
-//        RC_ASSERT(strstream.c_str() == sstr.str());
+        const std::string cmp1(strstream.c_str(), strstream.length()-1);
+        const std::string cmp2(sstr.str().c_str(), sstr.str().length()-1);
+        RC_ASSERT(cmp1 == cmp2);
     });
     if (nbTests)
     {
-        std::cout << "Append a double int to a string (< 512 characters) perfs  [" << time_span1/nbTests << "] std::stringstream [" 
+        std::cout << "Append a double to a string (< 512 characters) perfs  [" << time_span1/nbTests << "] std::stringstream [" 
             << time_span2/nbTests << "] (in ns)" << std::endl;
     }
 }

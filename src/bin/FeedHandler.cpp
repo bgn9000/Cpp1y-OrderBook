@@ -1,6 +1,7 @@
 #include "FeedHandler.h"
 
 #include "Parser.h"
+#include "StrStream.h"
 
 bool FeedHandler::processMessage(const std::string& line)
 {
@@ -12,29 +13,29 @@ bool FeedHandler::processMessage(const std::string& line)
     case static_cast<char>(Parser::Action::ADD):
         if (p.getSide() == static_cast<char>(Parser::Side::BUY))
         {
-            return NewBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return newBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
         } 
         else
         {
-            return NewSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return newSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
         }
     case static_cast<char>(Parser::Action::CANCEL):
         if (p.getSide() == static_cast<char>(Parser::Side::BUY))
         {
-            return CancelBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return cancelBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
         } 
         else
         {
-            return CancelSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return cancelSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
         }
     case static_cast<char>(Parser::Action::MODIFY):
         if (p.getSide() == static_cast<char>(Parser::Side::BUY))
         {
-            return ModifyBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return modifyBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
         } 
         else
         {
-            return ModifySellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return modifySellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
         }
     case static_cast<char>(Parser::Action::TRADE):
         break;
@@ -42,7 +43,20 @@ bool FeedHandler::processMessage(const std::string& line)
     return false;
 }
 
-bool FeedHandler::NewBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+void FeedHandler::printMidQuotes(std::ostream& os) const
+{
+    if (unlikely(bids_.begin() == bids_.end() || asks_.begin() == asks_.end()))
+    {
+        os << "NAN" << std::endl;
+        return;
+    }
+    StrStream strstream;
+    Price midQuote = (getPrice(*bids_.begin())+getPrice(*asks_.begin()))/2;
+    strstream << midQuote << '\n';
+    os << strstream.c_str();
+}
+
+bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
 {
     if (unlikely(buyOrders_.find(orderId) != buyOrders_.end() || 
                  sellOrders_.find(orderId) != sellOrders_.end()))
@@ -71,7 +85,7 @@ bool FeedHandler::NewBuyOrder(OrderId orderId, FeedHandler::Order&& order, const
     return true;
 }
 
-bool FeedHandler::NewSellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::newSellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
 {
     if (unlikely(buyOrders_.find(orderId) != buyOrders_.end() || 
                  sellOrders_.find(orderId) != sellOrders_.end()))
@@ -100,7 +114,7 @@ bool FeedHandler::NewSellOrder(OrderId orderId, FeedHandler::Order&& order, cons
     return true;
 }
 
-bool FeedHandler::CancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
 {
     auto itOrder = buyOrders_.find(orderId);
     if (unlikely(itOrder == buyOrders_.end()))
@@ -138,7 +152,7 @@ bool FeedHandler::CancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, co
     return ret;
 }
 
-bool FeedHandler::CancelSellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
 {
     auto itOrder = sellOrders_.find(orderId);
     if (unlikely(itOrder == sellOrders_.end()))
@@ -176,7 +190,7 @@ bool FeedHandler::CancelSellOrder(OrderId orderId, FeedHandler::Order&& order, c
     return ret;
 }
 
-bool FeedHandler::ModifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
 {
     auto itOrder = buyOrders_.find(orderId);
     if (unlikely(itOrder == buyOrders_.end()))
@@ -214,7 +228,7 @@ bool FeedHandler::ModifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, co
     return true;
 }
 
-bool FeedHandler::ModifySellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
 {
     auto itOrder = sellOrders_.find(orderId);
     if (unlikely(itOrder == sellOrders_.end()))

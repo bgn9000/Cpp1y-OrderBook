@@ -101,7 +101,7 @@ std::ostream& operator<<(std::ostream& os, const StrStream& strstr)
 StrStream& StrStream::operator<<(float flt)
 {
     char buf[64] = {};
-    size_t bufsize = Decoder::convert_float<float>(buf, flt, std::numeric_limits<float>::digits10);
+    size_t bufsize = Decoder::convert_unsigned_float<float>(buf, flt, 3 /*std::numeric_limits<float>::digits10*/);
     append(buf, bufsize);
     return *this;
 }
@@ -109,7 +109,7 @@ StrStream& StrStream::operator<<(float flt)
 StrStream& StrStream::operator<<(double dbl)
 {
     char buf[64] = {};
-    size_t bufsize = Decoder::convert_float<double>(buf, dbl, std::numeric_limits<double>::digits10);
+    size_t bufsize = Decoder::convert_unsigned_float<double>(buf, dbl, 6 /*std::numeric_limits<double>::digits10*/);
     append(buf, bufsize);
     return *this;
 }
