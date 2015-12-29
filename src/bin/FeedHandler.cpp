@@ -3,39 +3,39 @@
 #include "Parser.h"
 #include "StrStream.h"
 
-bool FeedHandler::processMessage(const std::string& line)
+bool FeedHandler::processMessage(const std::string& line, Errors& errors, const int verbose)
 {
 //    std::cout << line << std::endl;  
     Parser p;
-    if (!p.parse(line)) return false;
+    if (!p.parse(line, errors, verbose)) return false;
     switch(p.getAction())
     {
     case static_cast<char>(Parser::Action::ADD):
         if (p.getSide() == static_cast<char>(Parser::Side::BUY))
         {
-            return newBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return newBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
         } 
         else
         {
-            return newSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return newSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
         }
     case static_cast<char>(Parser::Action::CANCEL):
         if (p.getSide() == static_cast<char>(Parser::Side::BUY))
         {
-            return cancelBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return cancelBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
         } 
         else
         {
-            return cancelSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return cancelSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
         }
     case static_cast<char>(Parser::Action::MODIFY):
         if (p.getSide() == static_cast<char>(Parser::Side::BUY))
         {
-            return modifyBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return modifyBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
         } 
         else
         {
-            return modifySellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()});
+            return modifySellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
         }
     case static_cast<char>(Parser::Action::TRADE):
         break;
@@ -56,12 +56,117 @@ void FeedHandler::printMidQuotes(std::ostream& os) const
     os << strstream.c_str();
 }
 
-bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+
+
+
+void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbose)
+{
+    auto foundError = false;
+
+    StrStream strstream;    
+    strstream << "Summary:";
+    
+    // Parsing (not really errors)
+    if (unlikely(errors.commentedLines))
+    {
+        strstream << "\n [" << errors.commentedLines << "] commented lines";
+    }
+    if (unlikely(errors.blankLines))
+    {
+        strstream << "\n [" << errors.blankLines << "] blank or empty lines";
+    }
+    
+    // Parsing
+    if (unlikely(errors.corruptedMessages))
+    {
+        strstream << "\n [" << errors.corruptedMessages << "] corrupted messages";
+        foundError = true;
+    }
+    if (unlikely(errors.negativeOrderIds))
+    {
+        strstream << "\n [" << errors.negativeOrderIds << "] negative orderIds";
+        foundError = true;
+    }
+    if (unlikely(errors.negativeQuantities))
+    {
+        strstream << "\n [" << errors.negativeQuantities << "] negative quantities";
+        foundError = true;
+    }
+    if (unlikely(errors.negativePrices))
+    {
+        strstream << "\n [" << errors.negativePrices << "] negative prices";
+        foundError = true;
+    }
+    if (unlikely(errors.missingOrderIds))
+    {
+        strstream << "\n [" << errors.missingOrderIds << "] missing orderIds";
+        foundError = true;
+    }
+    if (unlikely(errors.negativeQuantities))
+    {
+        strstream << "\n [" << errors.negativeQuantities << "] missing quantities";
+        foundError = true;
+    }
+    if (unlikely(errors.negativePrices))
+    {
+        strstream << "\n [" << errors.negativePrices << "] missing prices";
+        foundError = true;
+    }
+    if (unlikely(errors.outOfBoundsOrderIds))
+    {
+        strstream << "\n [" << errors.outOfBoundsOrderIds << "] out of bounds orderIds";
+        foundError = true;
+    }
+    if (unlikely(errors.outOfBoundsQuantities))
+    {
+        strstream << "\n [" << errors.outOfBoundsQuantities << "] out of bounds quantities";
+        foundError = true;
+    }
+    if (unlikely(errors.outOfBoundsPrices))
+    {
+        strstream << "\n [" << errors.outOfBoundsPrices << "] out of bounds prices";
+        foundError = true;
+    }
+    
+    // Order Management
+    if (unlikely(errors.duplicateOrderIds))
+    {
+        strstream << "\n [" << errors.duplicateOrderIds << "] duplicate OrderIds";
+        foundError = true;
+    }
+    if (unlikely(errors.modifiesWithUnknownOrderId))
+    {
+        strstream << "\n [" << errors.modifiesWithUnknownOrderId << "] modifies with unknown OrderIds";
+        foundError = true;
+    }
+    if (unlikely(errors.cancelsWithUnknownOrderId))
+    {
+        strstream << "\n [" << errors.cancelsWithUnknownOrderId << "] cancels with unknown OrderIds";
+        foundError = true;
+    }
+    if (unlikely(errors.bestBidEqualOrUpperThanBestAsk))
+    {
+        strstream << "\n [" << errors.bestBidEqualOrUpperThanBestAsk << "] best bid equal or upper than best ask";
+        foundError = true;
+    }
+        
+    if (likely(!foundError))
+    {
+        strstream << " no error found";
+    }
+    strstream << '\n';
+    if (unlikely(verbose))
+        strstream << "Length: " << strstream.length() << '\n';
+    os << strstream.c_str();
+}
+
+bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)
 {
     if (unlikely(buyOrders_.find(orderId) != buyOrders_.end() || 
                  sellOrders_.find(orderId) != sellOrders_.end()))
     {
         if (verbose > 0) std::cerr << "Duplicate orderId [" << orderId << "], new order rejected" << std::endl;
+        ++errors.duplicateOrderIds;
         return false;
     }
     auto itBids = std::lower_bound(bids_.begin(), bids_.end(), getPrice(order), 
@@ -85,12 +190,13 @@ bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, const
     return true;
 }
 
-bool FeedHandler::newSellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::newSellOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)
 {
     if (unlikely(buyOrders_.find(orderId) != buyOrders_.end() || 
                  sellOrders_.find(orderId) != sellOrders_.end()))
     {
         if (verbose > 0) std::cerr << "Duplicate orderId [" << orderId << "], new order rejected" << std::endl;
+        ++errors.duplicateOrderIds;
         return false;
     }
     auto itAsks = std::lower_bound(asks_.begin(), asks_.end(), getPrice(order), 
@@ -114,12 +220,13 @@ bool FeedHandler::newSellOrder(OrderId orderId, FeedHandler::Order&& order, cons
     return true;
 }
 
-bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)
 {
     auto itOrder = buyOrders_.find(orderId);
     if (unlikely(itOrder == buyOrders_.end()))
     {
         if (verbose > 0) std::cerr << "Unknown buy orderId [" << orderId << "], cancel order impossible" << std::endl;
+        ++errors.cancelsWithUnknownOrderId;
         return false;
     }
     if (unlikely(getQty(itOrder->second) != getQty(order) || getPrice(itOrder->second) != getPrice(order)))
@@ -152,12 +259,13 @@ bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, co
     return ret;
 }
 
-bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)
 {
     auto itOrder = sellOrders_.find(orderId);
     if (unlikely(itOrder == sellOrders_.end()))
     {
         if (verbose > 0) std::cerr << "Unknown sell orderId [" << orderId << "], cancel order impossible" << std::endl;
+        ++errors.cancelsWithUnknownOrderId;
         return false;
     }
     if (unlikely(getQty(itOrder->second) != getQty(order) || getPrice(itOrder->second) != getPrice(order)))
@@ -190,12 +298,13 @@ bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, c
     return ret;
 }
 
-bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)
 {
     auto itOrder = buyOrders_.find(orderId);
     if (unlikely(itOrder == buyOrders_.end()))
     {
         if (verbose > 0) std::cerr << "Unknown buy orderId [" << orderId << "], modify order impossible" << std::endl;
+        ++errors.modifiesWithUnknownOrderId;
         return false;
     }
     if (unlikely(getPrice(itOrder->second) != getPrice(order)))
@@ -228,12 +337,13 @@ bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, co
     return true;
 }
 
-bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, const int verbose)
+bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)
 {
     auto itOrder = sellOrders_.find(orderId);
     if (unlikely(itOrder == sellOrders_.end()))
     {
         if (verbose > 0) std::cerr << "Unknown sell orderId [" << orderId << "], modify order impossible" << std::endl;
+        ++errors.modifiesWithUnknownOrderId;
         return false;
     }
     if (unlikely(getPrice(itOrder->second) != getPrice(order)))

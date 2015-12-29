@@ -7,7 +7,7 @@
 // action = A (add), X (remove), M (modify)
 // side = B (buy), S (sell)
 // if action = T (Trade) : action,quantity,price
-bool Parser::parse(const std::string& str, const int verbose)
+bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
 {
     const auto len = str.size();
     auto i = 0U;
@@ -19,13 +19,19 @@ bool Parser::parse(const std::string& str, const int verbose)
             if (' ' == str[i]) continue;
             if (unlikely('/' == str[i]))
             {
-                if (len > i+1 && '/' == str[i+1]) return false;
+                if (len > i+1 && '/' == str[i+1])
+                {
+                    if (verbose > 1) std::cerr << "Line is comment in [" << str << "]" << std::endl;
+                    ++errors.commentedLines;
+                    return false;
+                }
                 if (verbose > 0) std::cerr << "Bad comment in [" << str << "]" << std::endl;
                 return false;
             }
             return true;
         }
-        if (verbose > 1) std::cerr << "firstField false : " << str << std::endl;
+        if (verbose > 1) std::cerr << "blank line : " << str << std::endl;
+        ++errors.blankLines;
         return false;
     };
 

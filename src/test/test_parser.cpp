@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     {
         if (!strcmp(argv[1], "-v")) verbose = std::stoi(argv[2]);
     }
-    std::cout << "Verbose is " << verbose << " : default is false, param '-v' to activate it" << std::endl;
+    std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
     
     auto spaces = [](int n) -> std::string
     {
@@ -28,15 +28,17 @@ int main(int argc, char **argv)
     rc::check("Skip comment lines", [&](std::string comment) 
     {
         std::string line = spaces(10) + "//" + spaces(10) + comment;
+        Errors errors;
         high_resolution_clock::time_point start = high_resolution_clock::now();
         Parser parser;
-        auto ret = parser.parse(line, verbose);
+        auto ret = parser.parse(line, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         ++nbTests;
             
         RC_ASSERT(ret == false);
+        RC_ASSERT(errors.commentedLines == nbTests);
     });
     if (nbTests)
     {
@@ -95,9 +97,10 @@ int main(int argc, char **argv)
         
         auto test_parse = [&]() 
         {
+            Errors errors;
             Parser parser;
             high_resolution_clock::time_point start = high_resolution_clock::now();
-            bool ret = parser.parse(line, verbose);
+            bool ret = parser.parse(line, errors, verbose);
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
@@ -144,8 +147,9 @@ int main(int argc, char **argv)
         RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10)
             << "line [" << line << ']' << std::endl;
         {
+            Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, verbose);                          
+            bool ret = parser.parse(line, errors, verbose);                          
             RC_ASSERT(0U == parser.getOrderId());
             RC_ASSERT(ret == false);
         }
@@ -157,8 +161,9 @@ int main(int argc, char **argv)
             spaces(10) + priceStr + spaces(10) + "//" + comment;
         RC_LOG() << "line [" << line << ']' << std::endl;
         {
+            Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, verbose);                          
+            bool ret = parser.parse(line, errors, verbose);                          
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
             RC_ASSERT(0U == parser.getQty());
@@ -172,8 +177,9 @@ int main(int argc, char **argv)
             spaces(10) + '0' + spaces(10) + "//" + comment;
         RC_LOG() << "line [" << line << ']' << std::endl;
         {
+            Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, verbose);                          
+            bool ret = parser.parse(line, errors, verbose);                          
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
             RC_ASSERT(qty == parser.getQty());
@@ -200,8 +206,9 @@ int main(int argc, char **argv)
         
         auto test_parse = [&]() 
         {
+            Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, verbose);
+            bool ret = parser.parse(line, errors, verbose);
             RC_ASSERT(ret == false);
         };
         
@@ -283,8 +290,9 @@ int main(int argc, char **argv)
         
         auto test_parse = [&]() 
         {
+            Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, verbose);
+            bool ret = parser.parse(line, errors, verbose);
             RC_ASSERT(ret == false);
         };
         
@@ -418,9 +426,10 @@ int main(int argc, char **argv)
         
         auto test_parse = [&]() 
         {
+            Errors errors;
             Parser parser;
             high_resolution_clock::time_point start = high_resolution_clock::now();
-            bool ret = parser.parse(line, verbose);
+            bool ret = parser.parse(line, errors, verbose);
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             RC_ASSERT(action == parser.getAction());

@@ -122,6 +122,14 @@ StrStream& StrStream::operator<<(unsigned int n)
     return *this;
 }
 
+StrStream& StrStream::operator<<(unsigned long n)
+{
+    char buf[64] = {};
+    size_t bufsize = Decoder::convert_unsigned_integer<unsigned long>(n, buf);
+    append(buf, bufsize);
+    return *this;
+}
+
 StrStream& StrStream::operator<<(unsigned long long n)
 {
     char buf[64] = {};

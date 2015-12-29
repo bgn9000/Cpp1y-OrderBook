@@ -60,6 +60,7 @@ public:
     StrStream& operator<<(float flt);
     StrStream& operator<<(double dbl);
     StrStream& operator<<(unsigned int n);
+    StrStream& operator<<(unsigned long n);
     StrStream& operator<<(unsigned long long n);
     
 private:
