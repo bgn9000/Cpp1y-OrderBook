@@ -26,11 +26,13 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                     return false;
                 }
                 if (verbose > 0) std::cerr << "Bad comment in [" << str << "]" << std::endl;
+                ++errors.corruptedMessages;
                 return false;
             }
+            if (unlikely(verbose > 2)) std::cerr << "firstField true" << std::endl;
             return true;
         }
-        if (verbose > 1) std::cerr << "blank line : " << str << std::endl;
+        if (verbose > 1) std::cerr << "Blank line : " << str << std::endl;
         ++errors.blankLines;
         return false;
     };
@@ -48,12 +50,12 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             else if (unlikely(' ' != str[i]))
             {
                 if (verbose > 0) std::cerr << "Bad formatted order info in [" << str << "]" << std::endl;
-                if (verbose > 1) std::cerr << "nextField false : " << str << std::endl;
+                ++errors.corruptedMessages;
                 return false;
             }
         }
-        if (verbose > 0) std::cerr << "Incomplete order info in [" << str << "]" << std::endl;
-        if (verbose > 1) std::cerr << "nextField false : " << str << std::endl;
+        if (verbose > 0) std::cerr << "Incomplete message in [" << str << "]" << std::endl;
+        ++errors.IncompleteMessages;
         return false;
     };
     
@@ -63,6 +65,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
         {
             if (likely(' ' != str[i]))
             {
+                if (unlikely(',' == str[i])) break;
                 action_ = str[i];
                 if (unlikely(static_cast<char>(Action::ADD) != action_ && 
                              static_cast<char>(Action::CANCEL) != action_ && 
@@ -70,6 +73,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                              static_cast<char>(Action::TRADE) != action_))
                 {
                     if (verbose > 0) std::cerr << "Expected valid action in [" << str << "]" << std::endl;
+                    ++errors.wrongActions;
                     return false;
                 }
                 ++i;
@@ -77,7 +81,8 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                 return true;
             }
         }
-        if (verbose > 1) std::cerr << "extractAction false : " << str << std::endl;
+        if (verbose > 0) std::cerr << "Missing action [" << str << "]" << std::endl;
+        ++errors.missingActions;
         return false;
     };
     
@@ -94,7 +99,16 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             }
             if (unlikely(' ' != str[j] && ',' != str[j]))
             {
-                if (verbose > 0) std::cerr << "Expected valid orderId in [" << str << "]" << std::endl;
+                if ('-' == str[j] && !start)
+                {
+                    if (verbose > 0) std::cerr << "Expected positive orderId in [" << str << "]" << std::endl;
+                    ++errors.negativeOrderIds;
+                }
+                else
+                {
+                    if (verbose > 0) std::cerr << "Expected valid orderId in [" << str << "]" << std::endl;
+                    ++errors.corruptedMessages;
+                }
                 return false;
             }
             if (likely(start))
@@ -104,23 +118,32 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             }
             if (',' == str[j])
             {
-                if (verbose > 0) std::cerr << "Expected valid orderId in [" << str << "]" << std::endl;
+                if (verbose > 0) std::cerr << "Missing orderId in [" << str << "]" << std::endl;
+                ++errors.missingOrderIds;
                 return false;
             }
         }
+        if (unlikely(j == len))
+        {
+            if (verbose > 0) std::cerr << "Incomplete message in [" << str << "]" << std::endl;
+            ++errors.IncompleteMessages;
+            return false;
+        }
         i = j;
-        if (end > start)
+        if (likely(end > start))
         {
             orderId_ = Decoder::retreive_unsigned_integer<OrderId>(&str[start], end-start);
             if (unlikely(0 == orderId_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero orderId in [" << str << "]" << std::endl;
+                ++errors.zeroOrderIds;
                 return false;
             }
             if (unlikely(verbose > 2)) std::cerr << "extractOrderId true" << std::endl;
             return true;
         }
-        if (verbose > 1) std::cerr << "extractOrderId false : " << str << std::endl;
+        if (verbose > 0) std::cerr << "Missing orderId in [" << str << "]" << std::endl;
+        ++errors.missingOrderIds;
         return false;
     };
     
@@ -131,11 +154,13 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
         {
             if (likely(' ' != str[i]))
             {
+                if (unlikely(',' == str[i])) break;
                 side_ = str[i];
                 if (unlikely(static_cast<char>(Side::BUY) != side_ && 
                              static_cast<char>(Side::SELL) != side_))
                 {
                     if (verbose > 0) std::cerr << "Expected valid side in [" << str << "]" << std::endl;
+                    ++errors.wrongSides;
                     return false;
                 }
                 ++i;
@@ -143,7 +168,14 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                 return true;
             }
         }
-        if (verbose > 1) std::cerr << "extractSide false : " << str << std::endl;
+        if (unlikely(i == len))
+        {
+            if (verbose > 0) std::cerr << "Incomplete message in [" << str << "]" << std::endl;
+            ++errors.IncompleteMessages;
+            return false;
+        }
+        if (verbose > 0) std::cerr << "Missing side [" << str << "]" << std::endl;
+        ++errors.missingSides;
         return false;
     };
     
@@ -159,7 +191,16 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             }
             if (unlikely(' ' != str[j] && ',' != str[j]))
             {
-                if (verbose > 0) std::cerr << "Expected valid qty in [" << str << "]" << std::endl;
+                if ('-' == str[j] && !start)
+                {
+                    if (verbose > 0) std::cerr << "Expected positive qty in [" << str << "]" << std::endl;
+                    ++errors.negativeQuantities;
+                }
+                else
+                {
+                    if (verbose > 0) std::cerr << "Expected valid qty in [" << str << "]" << std::endl;
+                    ++errors.corruptedMessages;
+                }
                 return false;
             }
             if (likely(start))
@@ -169,9 +210,16 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             }
             if (',' == str[j])
             {
-                if (verbose > 0) std::cerr << "Expected valid qty in [" << str << "]" << std::endl;
+                if (verbose > 0) std::cerr << "Missing qty in [" << str << "]" << std::endl;
+                ++errors.missingQuantities;
                 return false;
             }
+        }
+        if (unlikely(j == len))
+        {
+            if (verbose > 0) std::cerr << "Incomplete message in [" << str << "]" << std::endl;
+            ++errors.IncompleteMessages;
+            return false;
         }
         i = j;
         if (end > start)
@@ -180,12 +228,14 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             if (unlikely(0 == qty_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero qty in [" << str << "]" << std::endl;
+                ++errors.zeroQuantities;
                 return false;
             }
             if (unlikely(verbose > 2)) std::cerr << "extractQty true" << std::endl;
             return true;
         }
-        if (verbose > 1) std::cerr << "extractQty false : " << str << std::endl;
+        if (verbose > 0) std::cerr << "Missing qty in [" << str << "]" << std::endl;
+        ++errors.missingQuantities;
         return false;
     };
     
@@ -205,6 +255,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                 if (unlikely(dot || !start))
                 {
                     if (verbose > 0) std::cerr << "Expected valid price in [" << str << "]" << std::endl;
+                    ++errors.corruptedMessages;
                     return false;
                 }
                 dot = true;
@@ -212,7 +263,16 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             }
             if (unlikely(str[j] != ' ' && str[j] != ',' && str[j] != '/'))
             {
-                if (verbose > 0) std::cerr << "Expected valid price in [" << str << "]" << std::endl;
+                if ('-' == str[j] && !start)
+                {
+                    if (verbose > 0) std::cerr << "Expected positive price in [" << str << "]" << std::endl;
+                    ++errors.negativePrices;
+                }
+                else
+                {
+                    if (verbose > 0) std::cerr << "Expected valid price in [" << str << "]" << std::endl;
+                    ++errors.corruptedMessages;
+                }
                 return false;
             }
             if (likely(start))
@@ -222,23 +282,22 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             }
             if (',' == str[j])
             {
-                if (verbose > 0) std::cerr << "Expected valid price in [" << str << "]" << std::endl;
+                if (verbose > 0) std::cerr << "Missing price in [" << str << "]" << std::endl;
+                ++errors.missingPrices;
                 return false;
             }
         }
-        if (j == len)
+        if (likely(j == len && start))
         {
-            if (start) 
+            price_ = Decoder::retreive_unsigned_float<Price>(&str[start], len-start);
+            if (unlikely(0.0 == price_))
             {
-                price_ = Decoder::retreive_unsigned_float<Price>(&str[start], len-start);
-                if (unlikely(0.0 == price_))
-                {
-                    if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
-                    return false;
-                }
-                if (unlikely(verbose > 2)) std::cerr << "!!! extractPrice true : " << str << std::endl;
-                return true;
+                if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
+                ++errors.zeroPrices;
+                return false;
             }
+            if (unlikely(verbose > 2)) std::cerr << "extractPrice true : " << str << std::endl;
+            return true;
         }
         else if (end > start)
         {
@@ -246,12 +305,14 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             if (unlikely(0.0 == price_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
+                ++errors.zeroPrices;
                 return false;
             }
-            if (unlikely(verbose > 2)) std::cerr << "!!! extractPrice true : " << str << std::endl;
+            if (unlikely(verbose > 2)) std::cerr << "extractPrice true : " << str << std::endl;
             return true;
         }
-        if (verbose > 1) std::cerr << "extractPrice false : " << str << std::endl;
+        if (verbose > 0) std::cerr << "Missing price in [" << str << "]" << std::endl;
+        ++errors.missingPrices;
         return false;
     };
     
@@ -262,3 +323,4 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             extractQty()      && nextField() &&
             extractPrice());
 }
+

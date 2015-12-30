@@ -61,8 +61,6 @@ void FeedHandler::printMidQuotes(std::ostream& os) const
 
 void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbose)
 {
-    auto foundError = false;
-
     StrStream strstream;    
     strstream << "Summary:";
     
@@ -73,90 +71,110 @@ void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbos
     }
     if (unlikely(errors.blankLines))
     {
-        strstream << "\n [" << errors.blankLines << "] blank or empty lines";
+        strstream << "\n [" << errors.blankLines << "] blank lines";
     }
-    
-    // Parsing
-    if (unlikely(errors.corruptedMessages))
+
+    if (unlikely(errors.nbErrors() > 0))
     {
-        strstream << "\n [" << errors.corruptedMessages << "] corrupted messages";
-        foundError = true;
-    }
-    if (unlikely(errors.negativeOrderIds))
-    {
-        strstream << "\n [" << errors.negativeOrderIds << "] negative orderIds";
-        foundError = true;
-    }
-    if (unlikely(errors.negativeQuantities))
-    {
-        strstream << "\n [" << errors.negativeQuantities << "] negative quantities";
-        foundError = true;
-    }
-    if (unlikely(errors.negativePrices))
-    {
-        strstream << "\n [" << errors.negativePrices << "] negative prices";
-        foundError = true;
-    }
-    if (unlikely(errors.missingOrderIds))
-    {
-        strstream << "\n [" << errors.missingOrderIds << "] missing orderIds";
-        foundError = true;
-    }
-    if (unlikely(errors.negativeQuantities))
-    {
-        strstream << "\n [" << errors.negativeQuantities << "] missing quantities";
-        foundError = true;
-    }
-    if (unlikely(errors.negativePrices))
-    {
-        strstream << "\n [" << errors.negativePrices << "] missing prices";
-        foundError = true;
-    }
-    if (unlikely(errors.outOfBoundsOrderIds))
-    {
-        strstream << "\n [" << errors.outOfBoundsOrderIds << "] out of bounds orderIds";
-        foundError = true;
-    }
-    if (unlikely(errors.outOfBoundsQuantities))
-    {
-        strstream << "\n [" << errors.outOfBoundsQuantities << "] out of bounds quantities";
-        foundError = true;
-    }
-    if (unlikely(errors.outOfBoundsPrices))
-    {
-        strstream << "\n [" << errors.outOfBoundsPrices << "] out of bounds prices";
-        foundError = true;
-    }
-    
-    // Order Management
-    if (unlikely(errors.duplicateOrderIds))
-    {
-        strstream << "\n [" << errors.duplicateOrderIds << "] duplicate OrderIds";
-        foundError = true;
-    }
-    if (unlikely(errors.modifiesWithUnknownOrderId))
-    {
-        strstream << "\n [" << errors.modifiesWithUnknownOrderId << "] modifies with unknown OrderIds";
-        foundError = true;
-    }
-    if (unlikely(errors.cancelsWithUnknownOrderId))
-    {
-        strstream << "\n [" << errors.cancelsWithUnknownOrderId << "] cancels with unknown OrderIds";
-        foundError = true;
-    }
-    if (unlikely(errors.bestBidEqualOrUpperThanBestAsk))
-    {
-        strstream << "\n [" << errors.bestBidEqualOrUpperThanBestAsk << "] best bid equal or upper than best ask";
-        foundError = true;
-    }
+        // Parsing
+        if (unlikely(errors.corruptedMessages))
+        {
+            strstream << "\n [" << errors.corruptedMessages << "] corrupted messages";
+        }
+        if (unlikely(errors.IncompleteMessages))
+        {
+            strstream << "\n [" << errors.IncompleteMessages << "] incomplete messages";
+        }
+        if (unlikely(errors.wrongActions))
+        {
+            strstream << "\n [" << errors.wrongActions << "] wrong actions";
+        }
+        if (unlikely(errors.wrongSides))
+        {
+            strstream << "\n [" << errors.wrongSides << "] wrong sides";
+        }
+        if (unlikely(errors.negativeOrderIds))
+        {
+            strstream << "\n [" << errors.negativeOrderIds << "] negative orderIds";
+        }
+        if (unlikely(errors.negativeQuantities))
+        {
+            strstream << "\n [" << errors.negativeQuantities << "] negative quantities";
+        }
+        if (unlikely(errors.negativePrices))
+        {
+            strstream << "\n [" << errors.negativePrices << "] negative prices";
+        }
+        if (unlikely(errors.missingActions))
+        {
+            strstream << "\n [" << errors.missingActions << "] missing actions";
+        }
+        if (unlikely(errors.missingOrderIds))
+        {
+            strstream << "\n [" << errors.missingOrderIds << "] missing orderIds";
+        }
+        if (unlikely(errors.missingSides))
+        {
+            strstream << "\n [" << errors.missingSides << "] missing sides";
+        }
+        if (unlikely(errors.missingQuantities))
+        {
+            strstream << "\n [" << errors.missingQuantities << "] missing quantities";
+        }
+        if (unlikely(errors.missingPrices))
+        {
+            strstream << "\n [" << errors.missingPrices << "] missing prices";
+        }
+        if (unlikely(errors.zeroOrderIds))
+        {
+            strstream << "\n [" << errors.zeroOrderIds << "] zero orderIds";
+        }
+        if (unlikely(errors.zeroQuantities))
+        {
+            strstream << "\n [" << errors.zeroQuantities << "] zero quantities";
+        }
+        if (unlikely(errors.zeroPrices))
+        {
+            strstream << "\n [" << errors.zeroPrices << "] zero prices";
+        }
+        if (unlikely(errors.outOfBoundsOrderIds))
+        {
+            strstream << "\n [" << errors.outOfBoundsOrderIds << "] out of bounds orderIds";
+        }
+        if (unlikely(errors.outOfBoundsQuantities))
+        {
+            strstream << "\n [" << errors.outOfBoundsQuantities << "] out of bounds quantities";
+        }
+        if (unlikely(errors.outOfBoundsPrices))
+        {
+            strstream << "\n [" << errors.outOfBoundsPrices << "] out of bounds prices";
+        }
         
-    if (likely(!foundError))
+        // Order Management
+        if (unlikely(errors.duplicateOrderIds))
+        {
+            strstream << "\n [" << errors.duplicateOrderIds << "] duplicate OrderIds";
+        }
+        if (unlikely(errors.modifiesWithUnknownOrderId))
+        {
+            strstream << "\n [" << errors.modifiesWithUnknownOrderId << "] modifies with unknown OrderIds";
+        }
+        if (unlikely(errors.cancelsWithUnknownOrderId))
+        {
+            strstream << "\n [" << errors.cancelsWithUnknownOrderId << "] cancels with unknown OrderIds";
+        }
+        if (unlikely(errors.bestBidEqualOrUpperThanBestAsk))
+        {
+            strstream << "\n [" << errors.bestBidEqualOrUpperThanBestAsk << "] best bid equal or upper than best ask";
+        }
+    }        
+    else
     {
         strstream << " no error found";
     }
     strstream << '\n';
     if (unlikely(verbose))
-        strstream << "Length: " << strstream.length() << '\n';
+        strstream << "Summary length: " << strstream.length() << '\n';
     os << strstream.c_str();
 }
 

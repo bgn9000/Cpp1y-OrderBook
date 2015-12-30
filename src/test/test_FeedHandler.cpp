@@ -20,20 +20,20 @@ public:
     auto getNbBids() { return bids_.size(); }
     auto getNbAsks() { return asks_.size(); }
     
-    inline bool newBuyOrder(OrderId orderId, Order&& order, const int verbose = 0)
-    { return FeedHandler::newBuyOrder(orderId, std::forward<Order>(order), verbose); }
-    inline bool newSellOrder(OrderId orderId, Order&& order, const int verbose = 0)
-    { return FeedHandler::newSellOrder(orderId, std::forward<Order>(order), verbose); }
+    inline bool newBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
+    { return FeedHandler::newBuyOrder(orderId, std::forward<Order>(order), errors, verbose); }
+    inline bool newSellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
+    { return FeedHandler::newSellOrder(orderId, std::forward<Order>(order), errors, verbose); }
     
-    inline bool cancelBuyOrder(OrderId orderId, Order&& order, const int verbose = 0)
-    { return FeedHandler::cancelBuyOrder(orderId, std::forward<Order>(order), verbose); }
-    inline bool cancelSellOrder(OrderId orderId, Order&& order, const int verbose = 0)
-    { return FeedHandler::cancelSellOrder(orderId, std::forward<Order>(order), verbose); }
+    inline bool cancelBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
+    { return FeedHandler::cancelBuyOrder(orderId, std::forward<Order>(order), errors, verbose); }
+    inline bool cancelSellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
+    { return FeedHandler::cancelSellOrder(orderId, std::forward<Order>(order), errors, verbose); }
     
-    inline bool modifyBuyOrder(OrderId orderId, Order&& order, const int verbose = 0)
-    { return FeedHandler::modifyBuyOrder(orderId, std::forward<Order>(order), verbose); }
-    inline bool modifySellOrder(OrderId orderId, Order&& order, const int verbose = 0)
-    { return FeedHandler::modifySellOrder(orderId, std::forward<Order>(order), verbose); }
+    inline bool modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
+    { return FeedHandler::modifyBuyOrder(orderId, std::forward<Order>(order), errors, verbose); }
+    inline bool modifySellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
+    { return FeedHandler::modifySellOrder(orderId, std::forward<Order>(order), errors, verbose); }
     
     std::map<OrderId, Order> buyOrders, sellOrders;    
     std::map<Price, int> uniqueBidPrices, uniqueAskPrices;

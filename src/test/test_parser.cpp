@@ -27,18 +27,34 @@ int main(int argc, char **argv)
     auto nbTests = 0U;
     rc::check("Skip comment lines", [&](std::string comment) 
     {
-        std::string line = spaces(10) + "//" + spaces(10) + comment;
-        Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
-        Parser parser;
-        auto ret = parser.parse(line, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
-        time_span1 += duration_cast<nanoseconds>(end - start).count();
-        
-        ++nbTests;
+        std::string line;
+        {
+            line = spaces(10) + "//" + spaces(10) + comment;
+            Errors errors;
+            high_resolution_clock::time_point start = high_resolution_clock::now();
+            Parser parser;
+            auto ret = parser.parse(line, errors, verbose);
+            high_resolution_clock::time_point end = high_resolution_clock::now();
+            time_span1 += duration_cast<nanoseconds>(end - start).count();
             
-        RC_ASSERT(ret == false);
-        RC_ASSERT(errors.commentedLines == nbTests);
+            ++nbTests;
+            
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(false == ret);
+            RC_ASSERT(1ULL == errors.commentedLines);
+            RC_ASSERT(errors.nbErrors() == 0ULL);
+        }
+        {
+            line = spaces(10) + "/ " + spaces(10) + comment;
+            Errors errors;
+            Parser parser;
+            auto ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(false == ret);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            RC_ASSERT(0ULL == errors.commentedLines);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+        }
     });
     if (nbTests)
     {
@@ -66,8 +82,7 @@ int main(int argc, char **argv)
                             spaces(10) + side + spaces(10) + ',' +
                             spaces(10) + qtyStr + spaces(10) + ',' +
                             spaces(10) + priceStr + spaces(10);
-        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10)
-            << "line [" << line << ']' << std::endl;
+        RC_LOG() << "line [" << line << ']' << std::endl;
         
         auto test_parse_stl = [&]() 
         {
@@ -104,12 +119,13 @@ int main(int argc, char **argv)
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
-            RC_ASSERT(action == parser.getAction());
-            RC_ASSERT(orderId == parser.getOrderId());
-            RC_ASSERT(side == parser.getSide());
-            RC_ASSERT(qty == parser.getQty());
+            RC_ASSERT(parser.getAction() == action);
+            RC_ASSERT(parser.getOrderId() == orderId);
+            RC_ASSERT(parser.getSide() == side);
+            RC_ASSERT(parser.getQty() == qty);
             RC_ASSERT(price - parser.getPrice() < std::pow(10, -std::numeric_limits<Price>::digits10));
             RC_ASSERT(true == ret);
+            RC_ASSERT(errors.nbErrors() == 0ULL);
         };
         
         test_parse();
@@ -144,47 +160,52 @@ int main(int argc, char **argv)
                             spaces(10) + side + spaces(10) + ',' +
                             spaces(10) + qtyStr + spaces(10) + ',' +
                             spaces(10) + priceStr + spaces(10) + "//" + comment;
-        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10)
-            << "line [" << line << ']' << std::endl;
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);                          
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(0U == parser.getOrderId());
-            RC_ASSERT(ret == false);
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.zeroOrderIds);
         }
         
         line =  spaces(10) + action + spaces(10) + ',' +
-            spaces(10) + orderIdStr + spaces(10) + ',' +
-            spaces(10) + side + spaces(10) + ',' +
-            spaces(10) + '0' + spaces(10) + ',' +
-            spaces(10) + priceStr + spaces(10) + "//" + comment;
-        RC_LOG() << "line [" << line << ']' << std::endl;
+                spaces(10) + orderIdStr + spaces(10) + ',' +
+                spaces(10) + side + spaces(10) + ',' +
+                spaces(10) + '0' + spaces(10) + ',' +
+                spaces(10) + priceStr + spaces(10) + "//" + comment;
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);                          
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;                     
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
             RC_ASSERT(0U == parser.getQty());
-            RC_ASSERT(ret == false);
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.zeroQuantities);
         }
         
         line =  spaces(10) + action + spaces(10) + ',' +
-            spaces(10) + orderIdStr + spaces(10) + ',' +
-            spaces(10) + side + spaces(10) + ',' +
-            spaces(10) + qtyStr + spaces(10) + ',' +
-            spaces(10) + '0' + spaces(10) + "//" + comment;
-        RC_LOG() << "line [" << line << ']' << std::endl;
+                spaces(10) + orderIdStr + spaces(10) + ',' +
+                spaces(10) + side + spaces(10) + ',' +
+                spaces(10) + qtyStr + spaces(10) + ',' +
+                spaces(10) + '0' + spaces(10) + "//" + comment;
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);                          
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
             RC_ASSERT(qty == parser.getQty());
             RC_ASSERT(0.0 == parser.getPrice());
-            RC_ASSERT(ret == false);
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.zeroPrices);
         }
     });
 
@@ -204,72 +225,120 @@ int main(int argc, char **argv)
 
         std::string line;
         
-        auto test_parse = [&]() 
+        auto test_parse = [&](Errors& errors, bool isError = true) 
         {
-            Errors errors;
             Parser parser;
             bool ret = parser.parse(line, errors, verbose);
-            RC_ASSERT(ret == false);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(false == ret);
+            if (isError) RC_ASSERT(errors.nbErrors() == 1ULL);
+            else RC_ASSERT(errors.nbErrors() == 0ULL);
         };
         
+        Errors errors;
+        test_parse(errors, false);
+        RC_ASSERT(1ULL == errors.blankLines);
+        
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + ',';
-        test_parse();
-        line =  spaces(10) + ',' +
-                spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingActions);
+        
+        memset((void*)&errors, 0, sizeof(Errors));
+        line =  spaces(10) + ',' + spaces(10) + ',';
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingActions);
+        
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10);
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + ',';
-        test_parse();
-        line =  spaces(10) + action + spaces(10) + ',' +
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingOrderIds);
+
+        memset((void*)&errors, 0, sizeof(Errors));
+        line =  spaces(10) + action + spaces(10) + ',' + 
                 spaces(10) + orderIdStr + spaces(10);
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + ',';
-        test_parse();
-        
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingSides);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10);
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingQuantities);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10);
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.IncompleteMessages);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingPrices);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
-                spaces(10) + orderIdStr + spaces(10) + ',' +
-                spaces(10) + side + spaces(10) + ',' +
-                spaces(10) + qtyStr + spaces(10) + ',' +
-                spaces(10);
-        test_parse();
+              spaces(10) + orderIdStr + spaces(10) + ',' +
+              spaces(10) + side + spaces(10) + ',' +
+              spaces(10) + qtyStr + spaces(10) + ',' +
+              spaces(10);
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingPrices);
+
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10) + ',' +
                 spaces(10) + ',';
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.missingPrices);
     });
     
     rc::check("Parse wrong order lines", [&](std::string comment) 

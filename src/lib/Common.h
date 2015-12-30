@@ -22,14 +22,23 @@ namespace common
         unsigned long long blankLines = 0;
         
         unsigned long long corruptedMessages = 0;
+        unsigned long long IncompleteMessages = 0;
+        unsigned long long wrongActions = 0;
+        unsigned long long wrongSides = 0;
                 
         unsigned long long negativeOrderIds = 0;
         unsigned long long negativeQuantities = 0;
         unsigned long long negativePrices = 0;
         
+        unsigned long long missingActions = 0;
         unsigned long long missingOrderIds = 0;
+        unsigned long long missingSides = 0;
         unsigned long long missingQuantities = 0;
         unsigned long long missingPrices = 0;
+        
+        unsigned long long zeroOrderIds = 0;
+        unsigned long long zeroQuantities = 0;
+        unsigned long long zeroPrices = 0;
         
         unsigned long long outOfBoundsOrderIds = 0;
         unsigned long long outOfBoundsQuantities = 0;
@@ -43,6 +52,33 @@ namespace common
         
         // Trade Management
         unsigned long long tradesWithUnknownOrderId = 0;
+        
+        unsigned long long nbErrors()
+        {
+            return  corruptedMessages +
+                    IncompleteMessages +
+                    wrongActions +
+                    wrongSides +
+                    negativeOrderIds +
+                    negativeQuantities +
+                    negativePrices +
+                    missingActions +
+                    missingOrderIds +
+                    missingSides +
+                    missingQuantities +
+                    missingPrices +
+                    zeroOrderIds +
+                    zeroQuantities +
+                    zeroPrices +
+                    outOfBoundsOrderIds +
+                    outOfBoundsQuantities +
+                    outOfBoundsPrices +
+                    duplicateOrderIds +
+                    modifiesWithUnknownOrderId +
+                    cancelsWithUnknownOrderId +
+                    bestBidEqualOrUpperThanBestAsk +
+                    tradesWithUnknownOrderId;
+        }
     };
 }
 
