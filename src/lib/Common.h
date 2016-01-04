@@ -13,7 +13,26 @@ namespace common
 {
     using OrderId = unsigned int;
     using Quantity = unsigned int;
+    using AggregatedQty = unsigned long long;
     using Price = double;
+    
+    static constexpr int maxOrderId = (1'000'000'000 -1);
+    static constexpr int maxOrderQty = (1'000'000 -1);
+    static constexpr int maxOrderPrice = (1'000'000'000 -1);
+
+    namespace
+    {
+        constexpr auto nbChar(int v)
+        {
+            auto nb = 0U;
+            while (v > 0) { ++nb; v /= 10; }
+            return nb;
+        }
+    }
+    static constexpr int nbCharOfOrderId = nbChar(maxOrderId);
+    static constexpr int nbCharOfOrderQty = nbChar(maxOrderQty);
+    static constexpr int nbCharOfPrice = nbChar(maxOrderPrice);
+    static constexpr int nbCharOfPricePrecision = 6;
     
     struct Errors
     {

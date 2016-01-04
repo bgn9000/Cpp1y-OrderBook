@@ -18,6 +18,12 @@ int main(int argc, char **argv)
     }
     std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
     
+    rc::check("nbChar for OrderId and Qty", []() 
+    {
+        RC_ASSERT(nbCharOfOrderId == 9);
+        RC_ASSERT(nbCharOfOrderQty == 6);
+    });
+    
     auto spaces = [](int n) -> std::string
     {
         return std::string(*rc::gen::inRange(0, n), ' ');
@@ -60,17 +66,17 @@ int main(int argc, char **argv)
     {
         std::cout << "Skip comment lines perfs  [" << time_span1/nbTests << "] (in ns)" << std::endl;
     }
-    
+
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
     rc::check("Parse good order lines", [&](std::string comment) 
     {
         const auto action = *rc::gen::element('A', 'X', 'M');
-        const auto orderId = *rc::gen::nonZero<OrderId>();
+        const auto orderId = *rc::gen::inRange<OrderId>(1, maxOrderId);
         char orderIdStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
         const auto side = *rc::gen::element('B', 'S');
-        const auto qty = *rc::gen::nonZero<Quantity>();
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
@@ -140,15 +146,15 @@ int main(int argc, char **argv)
         std::cout << "Parse good order lines perfs  [" << time_span1/nbTests << "] naive stl impl [" 
             << time_span2/nbTests << "] (in ns)" << std::endl;
     }
-    
+
     rc::check("Parse order lines with 0 in orderId or quantity or price", [&](std::string comment) 
     {
         const auto action = *rc::gen::element('A', 'X', 'M');
-        const auto orderId = *rc::gen::nonZero<OrderId>();
+        const auto orderId = *rc::gen::inRange<OrderId>(1, maxOrderId);
         char orderIdStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
         const auto side = *rc::gen::element('B', 'S');
-        const auto qty = *rc::gen::nonZero<Quantity>();
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
@@ -208,15 +214,145 @@ int main(int argc, char **argv)
             RC_ASSERT(1ULL == errors.zeroPrices);
         }
     });
-
-    rc::check("Parse partial order lines", [&](std::string comment) 
+    
+    rc::check("Parse order lines with negative orderId or quantity or price", [&](std::string comment) 
     {
         const auto action = *rc::gen::element('A', 'X', 'M');
-        const auto orderId = *rc::gen::nonZero<OrderId>();
+        const auto orderId = *rc::gen::inRange<OrderId>(1, maxOrderId);
         char orderIdStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
         const auto side = *rc::gen::element('B', 'S');
-        const auto qty = *rc::gen::nonZero<Quantity>();
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
+        char qtyStr[64] = {};
+        len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
+        const auto price = *rc::gen::positive<Price>();
+        char priceStr[64] = {};
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        
+        std::string line =  spaces(10) + action + spaces(10) + ',' +
+                            spaces(10) + '-' + orderIdStr + spaces(10) + ',' +
+                            spaces(10) + side + spaces(10) + ',' +
+                            spaces(10) + qtyStr + spaces(10) + ',' +
+                            spaces(10) + priceStr + spaces(10) + "//" + comment;
+        {
+            Errors errors;
+            Parser parser;
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(0U == parser.getOrderId());
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.negativeOrderIds);
+        }
+        
+        line =  spaces(10) + action + spaces(10) + ',' +
+                spaces(10) + orderIdStr + spaces(10) + ',' +
+                spaces(10) + side + spaces(10) + ',' +
+                spaces(10) + '-' + qtyStr + spaces(10) + ',' +
+                spaces(10) + priceStr + spaces(10) + "//" + comment;
+        {
+            Errors errors;
+            Parser parser;
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;                     
+            RC_ASSERT(orderId == parser.getOrderId());
+            RC_ASSERT(side == parser.getSide());
+            RC_ASSERT(0U == parser.getQty());
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.negativeQuantities);
+        }
+        
+        line =  spaces(10) + action + spaces(10) + ',' +
+                spaces(10) + orderIdStr + spaces(10) + ',' +
+                spaces(10) + side + spaces(10) + ',' +
+                spaces(10) + qtyStr + spaces(10) + ',' +
+                spaces(10) + '-' + priceStr + spaces(10) + "//" + comment;
+        {
+            Errors errors;
+            Parser parser;
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(orderId == parser.getOrderId());
+            RC_ASSERT(side == parser.getSide());
+            RC_ASSERT(qty == parser.getQty());
+            RC_ASSERT(0.0 == parser.getPrice());
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.negativePrices);
+        }
+    });
+    
+    rc::check("Parse order lines with out of bounds orderId or quanity", [&](std::string comment) 
+    {
+        const auto action = *rc::gen::element('A', 'X', 'M');
+        
+        const auto orderId = *rc::gen::inRange<Quantity>(1, maxOrderId);
+        char orderIdStr[64] = {};
+        auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
+        
+        const auto orderId_over = *rc::gen::suchThat<OrderId>([](OrderId id) {
+            return (id > maxOrderId);
+        });
+        char orderId_overStr[64] = {};
+        len = Decoder::convert_unsigned_integer<OrderId>(orderId_over, orderId_overStr);
+        
+        const auto side = *rc::gen::element('B', 'S');
+        
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
+        char qtyStr[64] = {};
+        len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
+        char qty_overStr[64] = {};
+        const auto qty_over = *rc::gen::suchThat<Quantity>([](Quantity qty) {
+            return (qty > maxOrderQty);
+        });
+        len = Decoder::convert_unsigned_integer<Quantity>(qty_over, qty_overStr);
+        
+        const auto price = *rc::gen::positive<Price>();
+        char priceStr[64] = {};
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        
+        std::string line =  spaces(10) + action + spaces(10) + ',' +
+                            spaces(10) + orderId_overStr + spaces(10) + ',' +
+                            spaces(10) + side + spaces(10) + ',' +
+                            spaces(10) + qtyStr + spaces(10) + ',' +
+                            spaces(10) + priceStr + spaces(10) + "//" + comment;
+        {
+            Errors errors;
+            Parser parser;
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(0U == parser.getOrderId());
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.outOfBoundsOrderIds);
+        }
+        line =  spaces(10) + action + spaces(10) + ',' +
+                spaces(10) + orderIdStr + spaces(10) + ',' +
+                spaces(10) + side + spaces(10) + ',' +
+                spaces(10) + qty_overStr + spaces(10) + ',' +
+                spaces(10) + priceStr + spaces(10) + "//" + comment;
+        {
+            Errors errors;
+            Parser parser;
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(orderId == parser.getOrderId());
+            RC_ASSERT(0U == parser.getQty());
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.outOfBoundsQuantities);
+        }
+    });
+    
+    rc::check("Parse partial order lines", [&](std::string comment) 
+    {
+        const auto action = *rc::gen::element('A', 'X', 'M');
+        const auto orderId = *rc::gen::inRange<OrderId>(1, maxOrderId);
+        char orderIdStr[64] = {};
+        auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
+        const auto side = *rc::gen::element('B', 'S');
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
@@ -344,11 +480,11 @@ int main(int argc, char **argv)
     rc::check("Parse wrong order lines", [&](std::string comment) 
     {
         const auto action = *rc::gen::element('A', 'X', 'M');
-        const auto orderId = *rc::gen::nonZero<OrderId>();
+        const auto orderId = *rc::gen::inRange<OrderId>(1, maxOrderId);
         char orderIdStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
         const auto side = *rc::gen::element('B', 'S');
-        const auto qty = *rc::gen::nonZero<Quantity>();
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
@@ -357,102 +493,132 @@ int main(int argc, char **argv)
 
         std::string line;
         
-        auto test_parse = [&]() 
+        auto test_parse = [&](Errors& errors) 
         {
-            Errors errors;
             Parser parser;
             bool ret = parser.parse(line, errors, verbose);
-            RC_ASSERT(ret == false);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(false == ret);
         };
         
         auto bad_character = *rc::gen::arbitrary<char>();
-        if ('A' == bad_character || 'X' == bad_character || 'M' == bad_character ||
-            ' ' == bad_character || 0 == bad_character ||  '/' == bad_character) 
+        if ('A' == bad_character || ',' == bad_character || 
+            '/' == bad_character || 'S' == bad_character)
+            bad_character += 2;
+        if ('X' == bad_character || 'M' == bad_character || 
+            'T' == bad_character || 'B' == bad_character ||
+            ' ' == bad_character || '-' == bad_character ||
+            '0' == bad_character || 0 == bad_character) 
             ++bad_character;
-// bad_character = ',';
+        Errors errors;
         line =  spaces(10) + bad_character + spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10) + ',' +
                 spaces(10) + priceStr;
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.wrongActions);
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + bad_character + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10) + ',' +
                 spaces(10) + priceStr;
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.corruptedMessages);
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + bad_character + spaces(10) + side + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10) + ',' +
                 spaces(10) + priceStr;
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.wrongSides);
+        memset((void*)&errors, 0, sizeof(Errors));
         line =  spaces(10) + action + spaces(10) + ',' +
                 spaces(10) + orderIdStr + spaces(10) + ',' +
                 spaces(10) + side + spaces(10) + bad_character + spaces(10) + ',' +
                 spaces(10) + qtyStr + spaces(10) + ',' +
                 spaces(10) + priceStr;
-        test_parse();
+        test_parse(errors);
+        RC_ASSERT(1ULL == errors.corruptedMessages);
         if (!std::isdigit(bad_character))
         {
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + bad_character + spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + bad_character + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();            
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + bad_character + spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + bad_character + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + bad_character + spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
         }
         else
         {
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + bad_character + ' ' + spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + ' ' + bad_character + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + bad_character + ' ' + spaces(10) + qtyStr + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
+            memset((void*)&errors, 0, sizeof(Errors));
             line =  spaces(10) + action + spaces(10) + ',' +
                     spaces(10) + orderIdStr + spaces(10) + ',' +
                     spaces(10) + side + spaces(10) + ',' +
                     spaces(10) + qtyStr + spaces(10) + ' ' + bad_character + spaces(10) + ',' +
                     spaces(10) + priceStr;
-            test_parse();
+            test_parse(errors);
+            RC_ASSERT(1ULL == errors.corruptedMessages);
         }
     });
 
@@ -461,7 +627,7 @@ int main(int argc, char **argv)
     rc::check("Parse good trade lines", [&](std::string comment) 
     {
         const auto action = 'T';
-        const auto qty = *rc::gen::nonZero<Quantity>();
+        const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         const auto price = *rc::gen::positive<Price>();
@@ -519,6 +685,7 @@ int main(int argc, char **argv)
         std::cout << "Parse good trade lines perfs  [" << time_span1/nbTests << "] naive stl impl [" 
             << time_span2/nbTests << "] (in ns)" << std::endl;
     }
+
     return 0;
 }
 

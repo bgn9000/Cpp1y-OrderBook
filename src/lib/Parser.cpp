@@ -132,6 +132,12 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
         i = j;
         if (likely(end > start))
         {
+            if (unlikely(end - start > nbCharOfOrderId))
+            {
+                if (verbose > 0) std::cerr << "Expected orderId less than 1 billion in [" << str << "]" << std::endl;
+                ++errors.outOfBoundsOrderIds;
+                return false;
+            }
             orderId_ = Decoder::retreive_unsigned_integer<OrderId>(&str[start], end-start);
             if (unlikely(0 == orderId_))
             {
@@ -224,6 +230,12 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
         i = j;
         if (end > start)
         {
+            if (unlikely(end - start > nbCharOfOrderQty))
+            {
+                if (verbose > 0) std::cerr << "Expected qty less than 1 million in [" << str << "]" << std::endl;
+                ++errors.outOfBoundsQuantities;
+                return false;
+            }
             qty_ = Decoder::retreive_unsigned_integer<Quantity>(&str[start], end-start);
             if (unlikely(0 == qty_))
             {
