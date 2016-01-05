@@ -18,10 +18,11 @@ int main(int argc, char **argv)
     }
     std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
     
-    rc::check("nbChar for OrderId and Qty", []() 
+    rc::check("nbChar for OrderId, Qty and Price", []() 
     {
         RC_ASSERT(nbCharOfOrderId == 9);
         RC_ASSERT(nbCharOfOrderQty == 6);
+        RC_ASSERT(nbCharOfOrderPrice == 9);
     });
     
     auto spaces = [](int n) -> std::string
@@ -79,7 +80,11 @@ int main(int argc, char **argv)
         const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
-        const auto price = *rc::gen::positive<Price>();
+        /*Not working well to provide 100 tests case :
+        const auto price = *rc::gen::suchThat<Price>([](Price price) {
+            return (price > 0 && price <= maxOrderPrice);
+        });*/
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
         len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
         
@@ -113,7 +118,7 @@ int main(int argc, char **argv)
             RC_ASSERT(orderId == _orderId);
             RC_ASSERT(side == _side);
             RC_ASSERT(qty == _qty);
-            RC_ASSERT(price - _price < std::pow(10, -std::numeric_limits<Price>::digits10));
+            RC_ASSERT(price - _price < std::pow(10, -nbCharOfPricePrecision+1));
         };
         
         auto test_parse = [&]() 
@@ -129,7 +134,7 @@ int main(int argc, char **argv)
             RC_ASSERT(parser.getOrderId() == orderId);
             RC_ASSERT(parser.getSide() == side);
             RC_ASSERT(parser.getQty() == qty);
-            RC_ASSERT(price - parser.getPrice() < std::pow(10, -std::numeric_limits<Price>::digits10));
+            RC_ASSERT(price - parser.getPrice() < std::pow(10, -nbCharOfPricePrecision+1));
             RC_ASSERT(true == ret);
             RC_ASSERT(errors.nbErrors() == 0ULL);
         };
@@ -146,7 +151,7 @@ int main(int argc, char **argv)
         std::cout << "Parse good order lines perfs  [" << time_span1/nbTests << "] naive stl impl [" 
             << time_span2/nbTests << "] (in ns)" << std::endl;
     }
-
+    
     rc::check("Parse order lines with 0 in orderId or quantity or price", [&](std::string comment) 
     {
         const auto action = *rc::gen::element('A', 'X', 'M');
@@ -157,9 +162,9 @@ int main(int argc, char **argv)
         const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
-        const auto price = *rc::gen::positive<Price>();
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
-        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + '0' + spaces(10) + ',' +
@@ -225,9 +230,9 @@ int main(int argc, char **argv)
         const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
-        const auto price = *rc::gen::positive<Price>();
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
-        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + '-' + orderIdStr + spaces(10) + ',' +
@@ -283,7 +288,7 @@ int main(int argc, char **argv)
         }
     });
     
-    rc::check("Parse order lines with out of bounds orderId or quanity", [&](std::string comment) 
+    rc::check("Parse order lines with out of bounds orderId or quanity or price", [&](std::string comment) 
     {
         const auto action = *rc::gen::element('A', 'X', 'M');
         
@@ -308,9 +313,15 @@ int main(int argc, char **argv)
         });
         len = Decoder::convert_unsigned_integer<Quantity>(qty_over, qty_overStr);
         
-        const auto price = *rc::gen::positive<Price>();
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
-        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
+        
+        char price_overStr[64] = {};
+        const auto price_over = *rc::gen::suchThat<Price>([](Price price) {
+            return (price > maxOrderPrice);
+        });
+        len = Decoder::convert_unsigned_float<Price>(price_overStr, price_over, nbCharOfPricePrecision);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + orderId_overStr + spaces(10) + ',' +
@@ -343,6 +354,23 @@ int main(int argc, char **argv)
             RC_ASSERT(errors.nbErrors() == 1ULL);
             RC_ASSERT(1ULL == errors.outOfBoundsQuantities);
         }
+        line =  spaces(10) + action + spaces(10) + ',' +
+                spaces(10) + orderIdStr + spaces(10) + ',' +
+                spaces(10) + side + spaces(10) + ',' +
+                spaces(10) + qtyStr + spaces(10) + ',' +
+                spaces(10) + price_overStr + spaces(10) + "//" + comment;
+        {
+            Errors errors;
+            Parser parser;
+            bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
+            RC_ASSERT(orderId == parser.getOrderId());
+            RC_ASSERT(qty == parser.getQty());
+            RC_ASSERT(0.0 == parser.getPrice());
+            RC_ASSERT(false == ret);
+            RC_ASSERT(errors.nbErrors() == 1ULL);
+            RC_ASSERT(1ULL == errors.outOfBoundsPrices);
+        }
     });
     
     rc::check("Parse partial order lines", [&](std::string comment) 
@@ -355,9 +383,9 @@ int main(int argc, char **argv)
         const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
-        const auto price = *rc::gen::positive<Price>();
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
-        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
 
         std::string line;
         
@@ -487,9 +515,9 @@ int main(int argc, char **argv)
         const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
-        const auto price = *rc::gen::positive<Price>();
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
-        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
 
         std::string line;
         
@@ -497,6 +525,7 @@ int main(int argc, char **argv)
         {
             Parser parser;
             bool ret = parser.parse(line, errors, verbose);
+            RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(errors.nbErrors() == 1ULL);
             RC_ASSERT(false == ret);
         };
@@ -630,15 +659,13 @@ int main(int argc, char **argv)
         const auto qty = *rc::gen::inRange<Quantity>(1, maxOrderQty);
         char qtyStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
-        const auto price = *rc::gen::positive<Price>();
+        const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
         char priceStr[64] = {};
-        len = Decoder::convert_unsigned_float<Price>(priceStr, price, std::numeric_limits<Price>::digits10);
+        len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
         
         std::string line =  spaces(10) + action + spaces(10) + ',' +
                             spaces(10) + qtyStr + spaces(10) + ',' +
                             spaces(10) + priceStr + spaces(10);
-        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10)
-            << "line [" << line << ']' << std::endl;
         
         auto test_parse_stl = [&]() 
         {
@@ -652,11 +679,11 @@ int main(int argc, char **argv)
             pos2 = line.find(',', ++pos);
             auto _price = std::stod(line.substr(pos, pos2-pos));
             high_resolution_clock::time_point end = high_resolution_clock::now();
-            time_span2 += duration_cast<nanoseconds>(end - start).count();
-            
+            time_span2 += duration_cast<nanoseconds>(end - start).count();            
+            RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(action == _action);
             RC_ASSERT(qty == _qty);
-            RC_ASSERT(price - _price < std::pow(10, -std::numeric_limits<Price>::digits10));
+            RC_ASSERT(price - _price < std::pow(10, -nbCharOfPricePrecision+1));
         };
         
         auto test_parse = [&]() 
@@ -667,9 +694,10 @@ int main(int argc, char **argv)
             bool ret = parser.parse(line, errors, verbose);
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
+            RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(action == parser.getAction());
             RC_ASSERT(qty == parser.getQty());
-            RC_ASSERT(price - parser.getPrice() < std::pow(10, -std::numeric_limits<Price>::digits10));
+            RC_ASSERT(price - parser.getPrice() < std::pow(10, -nbCharOfPricePrecision+1));
             RC_ASSERT(true == ret);
         };
         
@@ -685,7 +713,7 @@ int main(int argc, char **argv)
         std::cout << "Parse good trade lines perfs  [" << time_span1/nbTests << "] naive stl impl [" 
             << time_span2/nbTests << "] (in ns)" << std::endl;
     }
-
+    
     return 0;
 }
 

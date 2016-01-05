@@ -166,7 +166,7 @@ int main(int argc, char **argv)
         auto prefill = [&]()
         {
             auto ret = false;
-            double stepPrice = static_cast<double>(*rc::gen::inRange(1, 9'000'000)) / 1000.0;
+            auto stepPrice = static_cast<Price>(*rc::gen::inRange(1, 9'000'000)) / 1000.0;
             for (int cpt = 0; cpt < 1000; ++cpt)
             {
                 buyPrice -= stepPrice;
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
     nbTests = 0U;
     rc::check("New Buy Orders", [&]()
     {
-        Price price = static_cast<double>(1.0 / *rc::gen::inRange(1, 100'000)) + *rc::gen::inRange(1, maxOrderPrice/2);
+        auto price = static_cast<Price>(1.0) / *rc::gen::inRange(1, 1'000'000) + *rc::gen::inRange(1, maxOrderPrice/2);
         while (FH.uniqueBidPrices.find(price) != FH.uniqueBidPrices.end())
         { price += 1.0 / *rc::gen::inRange(2, 100'000); }
         FH.uniqueBidPrices[price] = 1;
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
     nbTests = 0U;
     rc::check("New Sell Orders", [&]()
     {
-        Price price = static_cast<double>(1.0 / *rc::gen::inRange(1, 100'000)) + *rc::gen::inRange(maxOrderPrice/2, maxOrderPrice);
+        auto price = static_cast<Price>(1.0) / *rc::gen::inRange(1, 1'000'000) + *rc::gen::inRange(maxOrderPrice/2, maxOrderPrice);
         while (FH.uniqueAskPrices.find(price) != FH.uniqueAskPrices.end())
         { price += 1.0 / *rc::gen::inRange(2, 100'000); }
         FH.uniqueAskPrices[price] = 1;

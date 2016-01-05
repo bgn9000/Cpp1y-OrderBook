@@ -31,7 +31,7 @@ namespace common
     }
     static constexpr int nbCharOfOrderId = nbChar(maxOrderId);
     static constexpr int nbCharOfOrderQty = nbChar(maxOrderQty);
-    static constexpr int nbCharOfPrice = nbChar(maxOrderPrice);
+    static constexpr int nbCharOfOrderPrice = nbChar(maxOrderPrice);
     static constexpr int nbCharOfPricePrecision = 6;
     
     struct Errors

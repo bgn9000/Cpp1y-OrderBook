@@ -10,7 +10,7 @@
 bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
 {
     const auto len = str.size();
-    auto i = 0U;
+    auto i = 0UL;
     
     auto firstField = [&]() -> bool
     {
@@ -89,7 +89,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
     auto extractOrderId = [&]() -> bool
     {
         if (unlikely(static_cast<char>(Action::TRADE) == action_)) { --i; return true; }
-        auto j = i, start = 0U, end = 0U;
+        auto j = i, start = 0UL, end = 0UL;
         for (; j < len; ++j)
         {
             if (likely(std::isdigit(str[j])))
@@ -130,15 +130,16 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             return false;
         }
         i = j;
-        if (likely(end > start))
+        const long dataLen = end - start;
+        if (likely(dataLen > 0))
         {
-            if (unlikely(end - start > nbCharOfOrderId))
+            if (unlikely(dataLen > nbCharOfOrderId))
             {
                 if (verbose > 0) std::cerr << "Expected orderId less than 1 billion in [" << str << "]" << std::endl;
                 ++errors.outOfBoundsOrderIds;
                 return false;
             }
-            orderId_ = Decoder::retreive_unsigned_integer<OrderId>(&str[start], end-start);
+            orderId_ = Decoder::retreive_unsigned_integer<OrderId>(&str[start], dataLen);
             if (unlikely(0 == orderId_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero orderId in [" << str << "]" << std::endl;
@@ -187,7 +188,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
     
     auto extractQty = [&]() -> bool
     {
-        auto j = i, start = 0U, end = 0U;
+        auto j = i, start = 0UL, end = 0UL;
         for (; j < len; ++j)
         {
             if (likely(std::isdigit(str[j])))
@@ -228,15 +229,16 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
             return false;
         }
         i = j;
-        if (end > start)
+        const long dataLen = end - start;
+        if (likely(dataLen > 0))
         {
-            if (unlikely(end - start > nbCharOfOrderQty))
+            if (unlikely(dataLen > nbCharOfOrderQty))
             {
                 if (verbose > 0) std::cerr << "Expected qty less than 1 million in [" << str << "]" << std::endl;
                 ++errors.outOfBoundsQuantities;
                 return false;
             }
-            qty_ = Decoder::retreive_unsigned_integer<Quantity>(&str[start], end-start);
+            qty_ = Decoder::retreive_unsigned_integer<Quantity>(&str[start], dataLen);
             if (unlikely(0 == qty_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero qty in [" << str << "]" << std::endl;
@@ -253,8 +255,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
     
     auto extractPrice = [&]() -> bool
     {
-        auto j = i, start = 0U, end = 0U;
-        bool dot = false;
+        auto j = i, start = 0UL, end = 0UL, dot = 0UL;
         for (; j < len; ++j)
         {
             if (likely(std::isdigit(str[j])))
@@ -270,7 +271,7 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                     ++errors.corruptedMessages;
                     return false;
                 }
-                dot = true;
+                dot = j;
                 continue;
             }
             if (unlikely(str[j] != ' ' && str[j] != ',' && str[j] != '/'))
@@ -299,21 +300,36 @@ bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
                 return false;
             }
         }
-        if (likely(j == len && start))
+        if (likely((j == len && start) || end > start))
         {
-            price_ = Decoder::retreive_unsigned_float<Price>(&str[start], len-start);
-            if (unlikely(0.0 == price_))
+            if (likely(j == len)) end = len;
+            if (!dot)
             {
-                if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;
-                ++errors.zeroPrices;
-                return false;
+                if (unlikely(end - start > nbCharOfOrderPrice))
+                {
+                    if (verbose > 0) std::cerr << "Expected price less than 1 billion in [" << str << "]" << std::endl;
+                    ++errors.outOfBoundsPrices;
+                    return false;
+                }
+                price_ = Decoder::retreive_unsigned_float<Price>(&str[start], end-start);
             }
-            if (unlikely(verbose > 2)) std::cerr << "extractPrice true : " << str << std::endl;
-            return true;
-        }
-        else if (end > start)
-        {
-            price_ = Decoder::retreive_unsigned_float<Price>(&str[start], end-start);
+            else
+            {
+                if (unlikely(dot - start > nbCharOfOrderPrice))
+                {
+                    if (verbose > 0) std::cerr << "Expected price less than 1 billion in [" << str << "]" << std::endl;
+                    ++errors.outOfBoundsPrices;
+                    return false;
+                }
+                if (likely(end - (dot + 1) <= nbCharOfPricePrecision))
+                {
+                    price_ = Decoder::retreive_unsigned_float<Price>(&str[start], end-start);
+                }
+                else
+                {
+                    price_ = Decoder::retreive_unsigned_float<Price>(&str[start], dot+1+nbCharOfPricePrecision-start);
+                }
+            }
             if (unlikely(0.0 == price_))
             {
                 if (verbose > 0) std::cerr << "Expected non zero price in [" << str << "]" << std::endl;

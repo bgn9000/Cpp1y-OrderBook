@@ -47,6 +47,11 @@ void FeedHandler::printMidQuotes(std::ostream& os) const
         os << "NAN" << std::endl;
         return;
     }
+    if (unlikely(*bids_.begin() >= *asks_.begin()))
+    {
+        os << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')' << std::endl;
+        return;
+    }
     StrStream strstream;
     Price midQuote = (getPrice(*bids_.begin())+getPrice(*asks_.begin()))/2;
     strstream << midQuote << '\n';
