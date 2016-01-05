@@ -15,6 +15,7 @@ int main()
 {
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
+    
     rc::check("Reverse string", [&](std::string str) 
     {
         char* str2 = strdup(str.c_str());
@@ -102,8 +103,9 @@ int main()
         char buf[64] = {};
         size_t size = Decoder::convert_unsigned_float<Price>(buf, d, std::numeric_limits<Price>::digits10);
 
+        std::string strBuf(buf, size);
         high_resolution_clock::time_point start = high_resolution_clock::now();
-        auto ret = std::stod(std::string(buf, size));
+        auto ret = std::stod(strBuf);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
 //        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<Price>::digits10));
@@ -127,7 +129,52 @@ int main()
         std::cout << "Parse Price perfs : std::stod [" << time_span1/nbTests
             << "] Decoder::retreive_float [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
+    
+    time_span1 = time_span2 = 0ULL;
+    nbTests = 0U;
+    rc::check("Parse leading '0' Price", [&]()
+    {
+        auto d = *rc::gen::positive<Price>();
+        char buf[64] = {};
+        size_t size = Decoder::convert_unsigned_float<Price>(buf, d, std::numeric_limits<Price>::digits10);
+        auto nbLeadingZeros = *rc::gen::inRange<unsigned int>(1, sizeof(buf)-strlen(buf)-1);
+        std::string strBuf(nbLeadingZeros, '0');
+        
+        // only zeros
+        auto ret = Decoder::retreive_unsigned_float<Price>(strBuf.c_str(), strBuf.length());
+        
+        RC_LOG() << std::fixed << std::setprecision(std::numeric_limits<Price>::digits10) 
+            << "buf [" << strBuf << "] ret [" << ret << "]" << std::endl;
+            
+        RC_ASSERT(0.0 == ret);
+        
+        strBuf += buf;
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        ret = std::stod(strBuf);
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        time_span1 += duration_cast<nanoseconds>(end - start).count();
+//        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<Price>::digits10));
+        
+        start = high_resolution_clock::now();
+        ret = Decoder::retreive_unsigned_float<Price>(strBuf.c_str(), strBuf.length());
+        end = high_resolution_clock::now();
+        time_span2 += duration_cast<nanoseconds>(end - start).count();
 
+        Price diff = ret - d;
+        
+        RC_LOG() << "buf [" << strBuf << "] and d [" << d << "] ret [" << ret << "] diff [" << diff << "]" << std::endl;
+        
+        ++nbTests;
+        
+        RC_ASSERT(diff < std::pow(10, -std::numeric_limits<Price>::digits10));
+    });
+        if (nbTests)
+    {
+        std::cout << "Parse leading '0' Price perfs : std::stod [" << time_span1/nbTests
+            << "] Decoder::retreive_float [" << time_span2/nbTests << "] (in ns)" << std::endl;
+    }
+    
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
     rc::check("Convert Price to string", [&]() 
@@ -156,6 +203,7 @@ int main()
         std::cout << "Convert Price to string perfs : sprintf [" << time_span1/nbTests
             << "] Decoder::convert_float [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
+    
     return 0;
 }
 
