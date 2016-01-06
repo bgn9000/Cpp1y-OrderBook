@@ -81,7 +81,8 @@ int main(int argc, char **argv)
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         /*Not working well to provide 100 tests case :
-        const auto price = *rc::gen::suchThat<Price>([](Price price) {
+        const auto price = *rc::gen::suchThat<Price>([](Price price) 
+        {
             return (price > 0 && price <= maxOrderPrice);
         });*/
         const auto price = static_cast<Price>(*rc::gen::inRange(1, 99)) / *rc::gen::inRange(100, 10'000) + *rc::gen::inRange(0, maxOrderPrice);
@@ -296,7 +297,8 @@ int main(int argc, char **argv)
         char orderIdStr[64] = {};
         auto len = Decoder::convert_unsigned_integer<OrderId>(orderId, orderIdStr);
         
-        const auto orderId_over = *rc::gen::suchThat<OrderId>([](OrderId id) {
+        const auto orderId_over = *rc::gen::suchThat<OrderId>([](OrderId id) 
+        {
             return (id > maxOrderId);
         });
         char orderId_overStr[64] = {};
@@ -308,7 +310,8 @@ int main(int argc, char **argv)
         char qtyStr[64] = {};
         len = Decoder::convert_unsigned_integer<Quantity>(qty, qtyStr);
         char qty_overStr[64] = {};
-        const auto qty_over = *rc::gen::suchThat<Quantity>([](Quantity qty) {
+        const auto qty_over = *rc::gen::suchThat<Quantity>([](Quantity qty) 
+        {
             return (qty > maxOrderQty);
         });
         len = Decoder::convert_unsigned_integer<Quantity>(qty_over, qty_overStr);
@@ -318,7 +321,8 @@ int main(int argc, char **argv)
         len = Decoder::convert_unsigned_float<Price>(priceStr, price, nbCharOfPricePrecision);
         
         char price_overStr[64] = {};
-        const auto price_over = *rc::gen::suchThat<Price>([](Price price) {
+        const auto price_over = *rc::gen::suchThat<Price>([](Price price) 
+        {
             return (price > maxOrderPrice);
         });
         len = Decoder::convert_unsigned_float<Price>(price_overStr, price_over, nbCharOfPricePrecision);

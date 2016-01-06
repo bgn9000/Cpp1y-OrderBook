@@ -62,25 +62,33 @@ void FeedHandler::printMidQuotes(std::ostream& os) const
 }
 
 void FeedHandler::printCurrentOrderBook(std::ostream& os) const
-{    
+{
+    StrStream strstream;
+    auto cap = strstream.capacity() - 128;
     const auto nbBids = bids_.size();
     os << "Bids:\n";
     for (auto i = 0U; i < nbBids; ++i)
     {
-        StrStream strstream;
         strstream << i << ": " << getQty(bids_[i]) << ' ' << getPrice(bids_[i]) << '\n';
-        os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+        if (unlikely(strstream.length() > cap))
+        {
+            os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+            strstream.clear();
+        }
 //        if (i % 100 == 0) os.flush();
     }
     const auto nbAsks = asks_.size();
     os << "Asks:\n";
     for (auto i = 0U; i < nbAsks; ++i)
     {
-        StrStream strstream;
         strstream << i << ": " << getQty(asks_[i]) << ' ' << getPrice(asks_[i]) << '\n';
-        os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+        if (unlikely(strstream.length() > cap))
+        {
+            os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+            strstream.clear();
+        }
 //        if (i % 100 == 0) os.flush();
-    }    
+    }
     os.flush();
 }
 

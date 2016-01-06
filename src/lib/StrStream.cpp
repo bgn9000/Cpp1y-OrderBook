@@ -34,6 +34,14 @@ void StrStream::append(const char* str, size_t len)
     }
 }
 
+void StrStream::append(size_t pos, char c)
+{
+    size_t sz = size();
+    if (unlikely(pos < sz || pos >= CAPACITY_MAX)) return;
+    resize(pos);
+    memset(begin() + sz, c, pos-sz);
+}
+
 StrStream& StrStream::operator<<(const char* str)
 {
     append(str, strlen(str));

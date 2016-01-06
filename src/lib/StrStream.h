@@ -45,6 +45,7 @@ public:
     }
     
     void append(const char* str, size_t len);
+    void append(size_t pos, char c);
     
     //AVOID THIS (use append (faster) or operator<< on const char*)
     StrStream& operator<<(const std::string& str) = delete;

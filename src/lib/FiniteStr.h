@@ -3,7 +3,7 @@
 #include <string>
 #include <limits>
 
-template<size_t _StringCapacity = 512>
+template<size_t _StringCapacity = 1024>
 class FiniteStr
 {
     // If this fails to compile, that means that buffer size is too big
@@ -21,7 +21,7 @@ public:
     ~FiniteStr() = default;
     FiniteStr(const FiniteStr&) = delete;
     FiniteStr& operator=(const FiniteStr&) = delete;
-
+    
     size_t size() const
     {
         return size_;
