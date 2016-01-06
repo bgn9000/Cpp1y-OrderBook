@@ -42,24 +42,47 @@ bool FeedHandler::processMessage(const std::string& line, Errors& errors, const 
 
 void FeedHandler::printMidQuotes(std::ostream& os) const
 {
+    StrStream strstream;
     if (unlikely(bids_.begin() == bids_.end() || asks_.begin() == asks_.end()))
     {
-        os << "NAN" << std::endl;
-        return;
+        strstream << "NAN";
     }
-    if (unlikely(*bids_.begin() >= *asks_.begin()))
+    else if (unlikely(getPrice(*bids_.begin()) >= getPrice(*asks_.begin())))
     {
-        os << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')' << std::endl;
-        return;
+        strstream << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')';
     }
-    StrStream strstream;
-    Price midQuote = (getPrice(*bids_.begin())+getPrice(*asks_.begin()))/2;
-    strstream << midQuote << '\n';
-    os << strstream.c_str();
+    else
+    {
+        Price midQuote = (getPrice(*bids_.begin())+getPrice(*asks_.begin()))/2;
+        strstream << midQuote;
+    }
+    strstream << '\n';
+    os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+    os.flush();
 }
 
-
-
+void FeedHandler::printCurrentOrderBook(std::ostream& os) const
+{    
+    const auto nbBids = bids_.size();
+    os << "Bids:\n";
+    for (auto i = 0U; i < nbBids; ++i)
+    {
+        StrStream strstream;
+        strstream << i << ": " << getQty(bids_[i]) << ' ' << getPrice(bids_[i]) << '\n';
+        os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+//        if (i % 100 == 0) os.flush();
+    }
+    const auto nbAsks = asks_.size();
+    os << "Asks:\n";
+    for (auto i = 0U; i < nbAsks; ++i)
+    {
+        StrStream strstream;
+        strstream << i << ": " << getQty(asks_[i]) << ' ' << getPrice(asks_[i]) << '\n';
+        os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+//        if (i % 100 == 0) os.flush();
+    }    
+    os.flush();
+}
 
 void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbose)
 {
@@ -172,12 +195,13 @@ void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbos
     }        
     else
     {
-        strstream << " no error found";
+        strstream << "\n no error found";
     }
     strstream << '\n';
     if (unlikely(verbose))
         strstream << "Summary length: " << strstream.length() << '\n';
-    os << strstream.c_str();
+    os.rdbuf()->sputn(strstream.c_str(), strstream.length());
+    os.flush();
 }
 
 bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, Errors& errors, const int verbose)

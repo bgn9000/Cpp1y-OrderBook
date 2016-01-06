@@ -10,6 +10,8 @@ int main(int argc, char **argv)
         if (!strcmp(argv[2], "-v")) verbose = std::stoi(argv[3]);
     }
     std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
+    std::cout.sync_with_stdio(false);
+    std::cerr.sync_with_stdio(false);
     
     FeedHandler feed;
     
@@ -26,7 +28,7 @@ int main(int argc, char **argv)
         {
             feed.printCurrentOrderBook(std::cerr);
         }
-        feed.printMidQuotes(std::cout);
+        feed.printMidQuotes(std::cerr);
     }
     feed.printCurrentOrderBook(std::cout);
     feed.printErrors(std::cout, errors, verbose);

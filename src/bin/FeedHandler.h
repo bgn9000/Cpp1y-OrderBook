@@ -18,7 +18,7 @@ public:
 
     bool processMessage(const std::string& line, Errors& errors, const int verbose = 0);
     void printMidQuotes(std::ostream& os) const;
-    void printCurrentOrderBook(std::ostream& os) const {}
+    void printCurrentOrderBook(std::ostream& os) const;
     void printErrors(std::ostream& os, Errors& errors, const int verbose = 0);
   
     using Order = std::tuple<Quantity, Price>;
