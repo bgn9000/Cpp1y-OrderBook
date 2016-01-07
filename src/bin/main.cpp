@@ -2,8 +2,13 @@
 
 #include <cstring>
 
+#include <chrono>
+using namespace std::chrono;
+
 int main(int argc, char **argv)
 {
+    high_resolution_clock::time_point start = high_resolution_clock::now();
+    
     auto verbose = 0;
     if (argc == 4)
     {
@@ -32,5 +37,10 @@ int main(int argc, char **argv)
     }
     feed.printCurrentOrderBook(std::cout);
     feed.printErrors(std::cout, errors, verbose);
+    
+    high_resolution_clock::time_point end = high_resolution_clock::now();
+    auto howlong = duration<double>(end - start);
+    std::cout << "Overall run perfs : " << duration_cast<seconds>(howlong).count() << " sec "
+        << duration_cast<microseconds>(howlong).count() << " usec " << std::endl;
     return 0;
 }
