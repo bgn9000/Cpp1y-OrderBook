@@ -42,73 +42,6 @@ public:
     inline bool modifySellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0)
     { return FeedHandler::modifySellOrder(orderId, std::forward<Order>(order), errors, verbose); }
     
-    inline void printCurrentOrderBook_array(std::ostream& os) const
-    {
-        StrStream strstream;
-        auto cap = strstream.capacity() - 128;
-        const auto nbBids = bids_.size();
-        const auto nbAsks = asks_.size();
-        os << "Full Bids/Asks:\n";
-        auto i = 0U;
-        while (1)
-        {
-            StrStream strstream_tmp;
-            if (i < nbBids)
-            {
-                Limit bid = bids_[i];
-                strstream_tmp << i; 
-                strstream_tmp.append(6, ' ');
-                strstream_tmp << ": " << getQty(bid) << " @ " << getPrice(bid);
-                strstream_tmp.append(40, ' ');
-                if (i < nbAsks)
-                {
-                    Limit ask = asks_[i];
-                    strstream_tmp << getQty(ask) << " @ " << getPrice(ask) << '\n';
-                }
-                else
-                {
-                    strstream_tmp << "empty\n";
-                }
-            }
-            else
-            {
-                strstream_tmp << i;
-                strstream_tmp.append(6, ' ');
-                strstream_tmp << ": empty";
-                strstream_tmp.append(40, ' ');
-                if (i < nbAsks)
-                {
-                    Limit ask = asks_[i];
-                    strstream_tmp << getQty(ask) << " @ " << getPrice(ask) << '\n';
-                }
-                else
-                {
-                    strstream << strstream_tmp;
-                    strstream << "empty\n";
-                    break;
-                }
-            }
-
-            if (strstream.length() + strstream_tmp.length() > cap)
-            {
-                os.rdbuf()->sputn(strstream.c_str(), strstream.length());
-                strstream.clear();
-            }
-            strstream << strstream_tmp;
-            ++i;
-        }
-        os.rdbuf()->sputn(strstream.c_str(), strstream.length());
-        os.flush();
-    }
-    inline void printCurrentOrderBook_array(const int verbose = 0) const
-    {
-        if (likely(0 == verbose))
-        {
-            std::ofstream null("/dev/null");
-            printCurrentOrderBook_array(static_cast<std::ostream&>(null));        
-        }
-        else printCurrentOrderBook_array(std::cout);
-    }
     inline void printCurrentOrderBook(const int verbose = 0) const
     {
         if (likely(0 == verbose))
@@ -259,46 +192,42 @@ int main(int argc, char **argv)
                 << "] and New Sell Orders (" << FH_prefilled.getNbSellOrders() << ") perfs : [" << time_span2/nbTests 
                 << "] (in ns)" << std::endl;
         }
-        std::cout << "buyPrice=" << buyPrice << " sellPrice=" << sellPrice << std::endl;
+        std::cout << "Last buyPrice=" << buyPrice << " sellPrice=" << sellPrice << std::endl;
     }
     FH_prefilled.checkBids(__LINE__);
     FH_prefilled.checkAsks(__LINE__);
 #endif
 #if 1
     {
+        auto nbDepths = std::max(FH_prefilled.getNbBids(), FH_prefilled.getNbAsks());
+        
         high_resolution_clock::time_point start = high_resolution_clock::now();
         FH_prefilled.printCurrentOrderBook();
         high_resolution_clock::time_point end = high_resolution_clock::now();
-        std::cout << "Print Serial prefilled orderbook perfs            : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
-            
-        start = high_resolution_clock::now();
-        FH_prefilled.printCurrentOrderBook_array();
-        end = high_resolution_clock::now();
-        std::cout << "Print Array prefilled orderbook perfs             : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
-        
+        std::cout << "\nPrint prefilled (" << nbDepths << ") orderbook perfs\t\t\t: [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
+                
         start = high_resolution_clock::now();
         std::deque<FeedHandler::Limit> bids_copy = FH_prefilled.copyBids();
         std::deque<FeedHandler::Limit> asks_copy = FH_prefilled.copyAsks();
         end = high_resolution_clock::now();
-        std::cout << "Copy prefilled orderbook perfs                    : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
+        std::cout << "Copy prefilled (" << nbDepths << ") orderbook perfs\t\t\t\t: [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
             
         FeedHandler::Limit fakeLimit{100, 1.0};
         start = high_resolution_clock::now();
         bids_copy.insert(bids_copy.begin(), fakeLimit);
         asks_copy.insert(asks_copy.begin(), fakeLimit);
         end = high_resolution_clock::now();
-        std::cout << "Insert at beginning of prefilled orderbook perfs  : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
+        std::cout << "Insert at beginning of prefilled (" << nbDepths << ") orderbook perfs\t: [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
         
         auto async_printCurrentOrderBook = [&]() { FH_prefilled.printCurrentOrderBook(); };
         start = high_resolution_clock::now();
         auto fut = std::async(std::launch::async, async_printCurrentOrderBook);
         end = high_resolution_clock::now();
-        std::cout << "Async print serial prefilled orderbook perfs      : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
+        std::cout << "Async print prefilled (" << nbDepths << ") orderbook perfs\t\t\t: [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
         fut.get();
         
         std::mutex mut;
@@ -326,8 +255,8 @@ int main(int argc, char **argv)
             cond.notify_one();
         }
         end = high_resolution_clock::now();
-        std::cout << "Threaded print serial prefilled orderbook perfs  : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
+        std::cout << "Threaded print prefilled (" << nbDepths << ") orderbook perfs\t\t: [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
         thr.join();
     }
 #endif
@@ -391,10 +320,18 @@ int main(int argc, char **argv)
     FH_prefilled.checkBids(__LINE__);
     if (FH.checkBids(__LINE__) == false)
     {
+        std::cerr << "Check bids failed!" << std::endl;
         FH.printCurrentOrderBook(verbose);
+        return -1;
     }
     
-    FH.printCurrentOrderBook_array(verbose);
+    {
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        FH.printCurrentOrderBook(verbose);
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        std::cout << "Print half filled orderbook (" << FH.getNbBids() << ") perfs : [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
+    }
 
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
@@ -455,24 +392,22 @@ int main(int argc, char **argv)
     FH_prefilled.checkAsks(__LINE__);
     if (FH.checkAsks(__LINE__) == false)
     {
+        std::cerr << "Check asks failed!" << std::endl;
         FH.printCurrentOrderBook(verbose);
+        return -1;
     }
     
     {
+        auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
+        
         high_resolution_clock::time_point start = high_resolution_clock::now();
         FH.printCurrentOrderBook(verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
-        std::cout << "Print Serial orderbook perfs : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
-
-        start = high_resolution_clock::now();
-        FH.printCurrentOrderBook_array(verbose);
-        end = high_resolution_clock::now();
-        std::cout << "Print Array orderbook perfs : [" << duration_cast<nanoseconds>(end - start).count() 
-            << "] (in ns)" << std::endl;
+        std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
 #endif
-#if 0
+#if 1
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
     std::map<OrderId, FeedHandler::Order> buyOrders_copie = FH.buyOrders;
@@ -534,7 +469,18 @@ int main(int argc, char **argv)
     FH_prefilled.checkBids(__LINE__);
     if (FH.checkBids(__LINE__) == false)
     {
+        std::cerr << "Check bids failed!" << std::endl;
         FH.printCurrentOrderBook(verbose);
+        return -1;
+    }
+    {
+        auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        FH.printCurrentOrderBook(verbose);
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
     
     time_span1 = time_span2 = 0ULL;
@@ -598,10 +544,21 @@ int main(int argc, char **argv)
     FH_prefilled.checkAsks(__LINE__);
     if (FH.checkAsks(__LINE__) == false)
     {
+        std::cerr << "Check asks failed!" << std::endl;
         FH.printCurrentOrderBook(verbose);
+        return -1;
+    }
+    {
+        auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        FH.printCurrentOrderBook(verbose);
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
 #endif
-#if 0
+#if 1
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
     buyOrderIt = FH.buyOrders.begin();
@@ -656,7 +613,18 @@ int main(int argc, char **argv)
     FH_prefilled.checkBids(__LINE__);
     if (FH.checkBids(__LINE__) == false)
     {
+        std::cerr << "Check bids failed!" << std::endl;
         FH.printCurrentOrderBook(verbose);
+        return -1;
+    }
+    {
+        auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        FH.printCurrentOrderBook(verbose);
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
     
     time_span1 = time_span2 = 0ULL;
@@ -714,10 +682,21 @@ int main(int argc, char **argv)
     FH_prefilled.checkAsks(__LINE__);
     if (FH.checkAsks(__LINE__) == false)
     {
+        std::cerr << "Check asks failed!" << std::endl;
         FH.printCurrentOrderBook(verbose);
+        return -1;
+    }
+    {
+        auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
+        
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+        FH.printCurrentOrderBook(verbose);
+        high_resolution_clock::time_point end = high_resolution_clock::now();
+        std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
+            << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
 #endif
-#if 0
+#if 1
     time_span1 = time_span2 = 0ULL;
     nbTests = 0U;
     auto cancelBuyOrders = [&]()

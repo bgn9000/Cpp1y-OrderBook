@@ -66,29 +66,57 @@ void FeedHandler::printCurrentOrderBook(std::ostream& os) const
     StrStream strstream;
     auto cap = strstream.capacity() - 128;
     const auto nbBids = bids_.size();
-    os << "Bids:\n";
-    for (auto i = 0U; i < nbBids; ++i)
-    {
-        strstream << i << ": " << getQty(bids_[i]) << ' ' << getPrice(bids_[i]) << '\n';
-        if (unlikely(strstream.length() > cap))
-        {
-            os.rdbuf()->sputn(strstream.c_str(), strstream.length());
-            strstream.clear();
-        }
-//        if (i % 100 == 0) os.flush();
-    }
     const auto nbAsks = asks_.size();
-    os << "Asks:\n";
-    for (auto i = 0U; i < nbAsks; ++i)
+    os << "Full Bids/Asks:\n";
+    auto i = 0U;
+    while (1)
     {
-        strstream << i << ": " << getQty(asks_[i]) << ' ' << getPrice(asks_[i]) << '\n';
-        if (unlikely(strstream.length() > cap))
+        StrStream strstream_tmp;
+        if (i < nbBids)
+        {
+            Limit bid = bids_[i];
+            strstream_tmp << i; 
+            strstream_tmp.append(6, ' ');
+            strstream_tmp << ": " << getQty(bid) << " @ " << getPrice(bid);
+            strstream_tmp.append(40, ' ');
+            if (i < nbAsks)
+            {
+                Limit ask = asks_[i];
+                strstream_tmp << getQty(ask) << " @ " << getPrice(ask) << '\n';
+            }
+            else
+            {
+                strstream_tmp << "empty\n";
+            }
+        }
+        else
+        {
+            strstream_tmp << i;
+            strstream_tmp.append(6, ' ');
+            strstream_tmp << ": empty";
+            strstream_tmp.append(40, ' ');
+            if (i < nbAsks)
+            {
+                Limit ask = asks_[i];
+                strstream_tmp << getQty(ask) << " @ " << getPrice(ask) << '\n';
+            }
+            else
+            {
+                strstream << strstream_tmp;
+                strstream << "empty\n";
+                break;
+            }
+        }
+
+        if (strstream.length() + strstream_tmp.length() > cap)
         {
             os.rdbuf()->sputn(strstream.c_str(), strstream.length());
             strstream.clear();
         }
-//        if (i % 100 == 0) os.flush();
+        strstream << strstream_tmp;
+        ++i;
     }
+    os.rdbuf()->sputn(strstream.c_str(), strstream.length());
     os.flush();
 }
 
