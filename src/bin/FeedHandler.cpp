@@ -42,21 +42,27 @@ bool FeedHandler::processMessage(const char* data, size_t dataLen, Errors& error
     return false;
 }
 
-void FeedHandler::printMidQuotesAndTrades(std::ostream& os)
+void FeedHandler::printMidQuotesAndTrades(std::ostream& os, Errors& errors)
 {
     StrStream strstream;
     if (unlikely(bids_.begin() == bids_.end() || asks_.begin() == asks_.end()))
     {
         strstream << "NAN" << '\n';
     }
-    else if (receivedNewTrade)
+    else if (receivedNewTrade_)
     {
-        strstream << getQty(currentTrade) << '@' << getPrice(currentTrade) << '\n';
-        receivedNewTrade = false;
+        strstream << getQty(currentTrade_) << '@' << getPrice(currentTrade_) << '\n';
+        receivedNewTrade_ = false;
+        detectCross_ = false;
     }
     else if (unlikely(getPrice(*bids_.begin()) >= getPrice(*asks_.begin())))
     {
-        strstream << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')' << '\n';
+        if (likely(!detectCross_)) detectCross_ = true;
+        else
+        {
+            strstream << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')' << '\n';
+            ++errors.bestBidEqualOrUpperThanBestAsk;
+        }
     }
     else
     {
@@ -478,14 +484,14 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
 
 bool FeedHandler::treatTrade(Trade&& newTrade)
 {
-    receivedNewTrade = true;
-    if (getPrice(newTrade) == getPrice(currentTrade))
+    receivedNewTrade_ = true;
+    if (getPrice(newTrade) == getPrice(currentTrade_))
     {
-        getQty(currentTrade) += getQty(newTrade);
+        getQty(currentTrade_) += getQty(newTrade);
     }
     else
     {
-        currentTrade = std::move(newTrade);
+        currentTrade_ = std::move(newTrade);
     }
     return true;
 }

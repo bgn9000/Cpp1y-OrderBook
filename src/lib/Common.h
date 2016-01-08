@@ -69,9 +69,6 @@ namespace common
         unsigned long long cancelsWithUnknownOrderId = 0;
         unsigned long long bestBidEqualOrUpperThanBestAsk = 0;
         
-        // Trade Management
-        unsigned long long tradesWithUnknownOrderId = 0;
-        
         unsigned long long nbErrors()
         {
             return  corruptedMessages +
@@ -95,8 +92,7 @@ namespace common
                     duplicateOrderIds +
                     modifiesWithUnknownOrderId +
                     cancelsWithUnknownOrderId +
-                    bestBidEqualOrUpperThanBestAsk +
-                    tradesWithUnknownOrderId;
+                    bestBidEqualOrUpperThanBestAsk;
         }
     };
 }

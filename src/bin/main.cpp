@@ -63,7 +63,7 @@ int main(int argc, char **argv)
                     feed.printCurrentOrderBook(std::cerr);
                     counter = 0;
                 }
-                feed.printMidQuotesAndTrades(std::cerr);
+                feed.printMidQuotesAndTrades(std::cerr, errors);
             }
             sbuffer.seek(pos+1);
         }

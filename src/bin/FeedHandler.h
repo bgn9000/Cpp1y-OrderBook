@@ -19,7 +19,7 @@ public:
     bool processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose = 0);
 
     void printCurrentOrderBook(std::ostream& os) const;
-    void printMidQuotesAndTrades(std::ostream& os);
+    void printMidQuotesAndTrades(std::ostream& os, Errors& errors);
     void printErrors(std::ostream& os, Errors& errors, const int verbose = 0);
   
     using Order = std::tuple<Quantity, Price>;
@@ -49,8 +49,9 @@ protected:
     
     std::deque<Limit> bids_, asks_;
     std::unordered_map<OrderId, Order> buyOrders_, sellOrders_;
-    Trade currentTrade{0ULL, 0.0};
-    bool receivedNewTrade = false;
+    Trade currentTrade_{0ULL, 0.0};
+    bool receivedNewTrade_ = false;
+    bool detectCross_ = false;
 };
 
 
