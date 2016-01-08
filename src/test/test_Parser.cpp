@@ -40,7 +40,7 @@ int main(int argc, char **argv)
             Errors errors;
             high_resolution_clock::time_point start = high_resolution_clock::now();
             Parser parser;
-            auto ret = parser.parse(line, errors, verbose);
+            auto ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
             line = spaces(10) + "/ " + spaces(10) + comment;
             Errors errors;
             Parser parser;
-            auto ret = parser.parse(line, errors, verbose);
+            auto ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(false == ret);
             RC_ASSERT(1ULL == errors.corruptedMessages);
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
             Errors errors;
             Parser parser;
             high_resolution_clock::time_point start = high_resolution_clock::now();
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(0U == parser.getOrderId());
             RC_ASSERT(false == ret);
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;                     
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
@@ -243,7 +243,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(0U == parser.getOrderId());
             RC_ASSERT(false == ret);
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;                     
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(side == parser.getSide());
@@ -335,7 +335,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(0U == parser.getOrderId());
             RC_ASSERT(false == ret);
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(0U == parser.getQty());
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(orderId == parser.getOrderId());
             RC_ASSERT(qty == parser.getQty());
@@ -396,7 +396,7 @@ int main(int argc, char **argv)
         auto test_parse = [&](Errors& errors, bool isError = true) 
         {
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(false == ret);
             if (isError) RC_ASSERT(errors.nbErrors() == 1ULL);
@@ -528,7 +528,7 @@ int main(int argc, char **argv)
         auto test_parse = [&](Errors& errors) 
         {
             Parser parser;
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(errors.nbErrors() == 1ULL);
             RC_ASSERT(false == ret);
@@ -695,7 +695,7 @@ int main(int argc, char **argv)
             Errors errors;
             Parser parser;
             high_resolution_clock::time_point start = high_resolution_clock::now();
-            bool ret = parser.parse(line, errors, verbose);
+            bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
             high_resolution_clock::time_point end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             RC_LOG() << "line [" << line << ']' << std::endl;

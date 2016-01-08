@@ -12,7 +12,7 @@ int main()
 {
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
-    rc::check("Append a character up to a specific position", [&]() 
+    rc::check("Append same character until a specific position", [&]() 
     {
         auto c = *rc::gen::suchThat<char>([](char c) { return c > 31 && c < 127; });
         auto pos = *rc::gen::inRange<unsigned int>(1, StrStream::capacity()-1);
@@ -34,7 +34,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Append a character up to a specific position perfs  [" << time_span1/nbTests 
+        std::cout << "Append a character up to a specific position perfs [" << time_span1/nbTests 
             << "] std::string [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
@@ -69,7 +69,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Append a string to a string (< 1024 characters) perfs  [" << time_span1/nbTests 
+        std::cout << "Append a string to a string (< 1024 characters) perfs [" << time_span1/nbTests 
             << "] std::string [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
@@ -122,7 +122,8 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "If we flush at each output, sputn perfs : [" << time_span1/nbTests << "] (in ns)" << std::endl;
+        std::cout << "If we flush at each output, sputn perfs : [" 
+            << time_span1/nbTests << "] (in ns)" << std::endl;
     }
     
     time_span1 = 0ULL, time_span2 = 0ULL;
@@ -158,7 +159,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Append a string to a string (> 1024 characters) perfs  [" << time_span1/nbTests 
+        std::cout << "Append a string to a string (> 1024 characters) perfs [" << time_span1/nbTests 
             << "] std::string [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
@@ -193,7 +194,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Append an unsigned int to a string (< 1024 characters) perfs  [" << time_span1/nbTests 
+        std::cout << "Append an unsigned int to a string (< 1024 characters) perfs [" << time_span1/nbTests 
             << "] std::stringstream [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
@@ -237,7 +238,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Append a double to a string (< 1024 characters) perfs  [" << time_span1/nbTests 
+        std::cout << "Append a double to a string (< 1024 characters) perfs [" << time_span1/nbTests 
             << "] std::stringstream [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
 }

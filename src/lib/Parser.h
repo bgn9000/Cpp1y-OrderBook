@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.h"
-
 using namespace common;
 
 class Parser
@@ -27,7 +26,7 @@ public:
     Parser(const Parser&) = delete;
     Parser& operator=(const Parser&) = delete;
     
-    bool parse(const std::string& str, Errors& errors, const int verbose = 0);
+    bool parse(const char* str, size_t len, Errors& errors, const int verbose = 0);
     
     auto getAction() { return action_; }
     auto getOrderId() { return orderId_; }

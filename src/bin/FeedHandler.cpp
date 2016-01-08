@@ -3,11 +3,10 @@
 #include "Parser.h"
 #include "StrStream.h"
 
-bool FeedHandler::processMessage(const std::string& line, Errors& errors, const int verbose)
+bool FeedHandler::processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose)
 {
-//    std::cout << line << std::endl;  
     Parser p;
-    if (!p.parse(line, errors, verbose)) return false;
+    if (!p.parse(data, dataLen, errors, verbose)) return false;
     switch(p.getAction())
     {
     case static_cast<char>(Parser::Action::ADD):

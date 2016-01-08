@@ -20,16 +20,16 @@ public:
     void clear()
     {
         FiniteStr<>::clear();
-        if (unlikely(strOver_ != 0))
+        if (unlikely(strOver_ != nullptr))
         {
             free(strOver_);
-            strOver_ = 0;
+            strOver_ = nullptr;
         }
     }
     
     const char* c_str() const
     {
-        if (likely(strOver_ == 0))
+        if (likely(strOver_ == nullptr))
         {
             return FiniteStr<>::c_str();
         }
@@ -37,7 +37,7 @@ public:
     }
     size_t length() const
     {
-        if (likely(strOver_ == 0))
+        if (likely(strOver_ == nullptr))
         {
             return size();
         }
@@ -65,6 +65,6 @@ public:
     StrStream& operator<<(unsigned long long n);
     
 private:
-    char*  strOver_ = 0;
+    char*  strOver_ = nullptr;
     size_t sizeOver_ = 0;
 };

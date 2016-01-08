@@ -7,9 +7,8 @@
 // action = A (add), X (remove), M (modify)
 // side = B (buy), S (sell)
 // if action = T (Trade) : action,quantity,price
-bool Parser::parse(const std::string& str, Errors& errors, const int verbose)
+bool Parser::parse(const char* str, size_t len, Errors& errors, const int verbose)
 {
-    const auto len = str.size();
     auto i = 0UL;
     
     auto firstField = [&]() -> bool

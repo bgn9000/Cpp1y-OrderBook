@@ -1,4 +1,5 @@
 #include "FeedHandler.h"
+#include "SimpleBuffer.h"
 
 #include <cstring>
 
@@ -7,7 +8,11 @@ using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
-    high_resolution_clock::time_point start = high_resolution_clock::now();
+    if (argc < 2 || !strcmp(argv[1], "-h"))
+    {
+        std::cerr << "Usage:\t<program name> <file> [-v <verbose>]" << std::endl;
+        return -1;
+    }
     
     auto verbose = 0;
     if (argc == 4)
@@ -16,24 +21,54 @@ int main(int argc, char **argv)
     }
     std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
     std::cout.sync_with_stdio(false);
+//    std::cout.setf(std::ios::fixed, std::ios::floatfield);
     std::cerr.sync_with_stdio(false);
+//    std::cerr.setf(std::ios::fixed, std::ios::floatfield);
     
-    FeedHandler feed;
-    
-    std::string line;
     const std::string filename(argv[1]);
     std::ifstream infile(filename.c_str(), std::ios::in);
-    
-    Errors errors;
-    
-    int counter = 0;
-    while (std::getline(infile, line)) 
+    if (!infile.is_open())
     {
-        if (feed.processMessage(line, errors, verbose) && ++counter % 10 == 0) 
+        std::cerr << "Expected a file (see usage) or [" << filename << "] not readable!" << std::endl;
+        return -1;
+    }
+    infile.sync_with_stdio(false);
+    
+    high_resolution_clock::time_point start = high_resolution_clock::now();
+
+    FeedHandler feed;
+    SimpleBuffer sbuffer;
+    Errors errors;
+    int counter = 0;
+    while (infile.good())
+    {
+        infile.read(sbuffer.dataEnd(), sbuffer.freeSpace());
+        sbuffer.seekEnd(infile.gcount());
+        if (unlikely(sbuffer.freeSpace() < 1024))
         {
-            feed.printCurrentOrderBook(std::cerr);
+            sbuffer.pushOnLeft();
+            if (unlikely(sbuffer.freeSpace() < 1024))
+            {
+                std::cerr << "Bad input file: line too long to process!" << std::endl;
+                break;
+            }
         }
-        feed.printMidQuotes(std::cerr);
+        while(sbuffer.available())
+        {
+            auto pos = sbuffer.getPosition('\n');
+            if (pos < 0) break;
+            if (likely(feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose)))
+            {
+                ++counter;
+                if (counter > 10)
+                {
+                    feed.printCurrentOrderBook(std::cerr);
+                    counter = 0;
+                }
+            }
+            feed.printMidQuotes(std::cerr);
+            sbuffer.seek(pos+1);
+        }
     }
     feed.printCurrentOrderBook(std::cout);
     feed.printErrors(std::cout, errors, verbose);

@@ -7,7 +7,7 @@
 void StrStream::append(const char* str, size_t len)
 {
     size_t addedLen = 0;
-    if (likely(strOver_ == 0))
+    if (likely(strOver_ == nullptr))
     {
         size_t prevSize = size();
         resize(prevSize + len);
@@ -21,7 +21,7 @@ void StrStream::append(const char* str, size_t len)
             sizeOver_ += size();
         }
     }
-    if (unlikely(strOver_ != 0))
+    if (unlikely(strOver_ != nullptr))
     {
         size_t prevSizeOver = sizeOver_;
         sizeOver_ += (len - addedLen);
@@ -36,10 +36,10 @@ void StrStream::append(const char* str, size_t len)
 
 void StrStream::append(size_t pos, char c)
 {
-    size_t sz = size();
-    if (unlikely(pos < sz || pos >= CAPACITY_MAX)) return;
+    size_t len = size();
+    if (unlikely(pos < len || pos >= CAPACITY_MAX)) return;
     resize(pos);
-    memset(begin() + sz, c, pos-sz);
+    memset(begin() + len, c, pos - len);
 }
 
 StrStream& StrStream::operator<<(const char* str)
@@ -50,13 +50,13 @@ StrStream& StrStream::operator<<(const char* str)
 
 StrStream& StrStream::operator<<(char c)
 {
-    size_t sz = size();
-    if (likely(strOver_ == 0))
+    size_t len = size();
+    if (likely(strOver_ == nullptr))
     {
-        if (sz < capacity())
+        if (len < capacity())
         {
-            resize(sz + 1);
-            *(begin() + sz) = c;
+            resize(len + 1);
+            *(begin() + len) = c;
         }
         else
         {
@@ -65,7 +65,7 @@ StrStream& StrStream::operator<<(char c)
             sizeOver_ += size();
         }
     }
-    if (unlikely(strOver_ != 0))
+    if (unlikely(strOver_ != nullptr))
     {
         if (sizeOver_ < CAPACITY_MAX)
         {
