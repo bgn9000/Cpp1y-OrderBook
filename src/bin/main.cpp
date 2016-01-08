@@ -21,9 +21,7 @@ int main(int argc, char **argv)
     }
     std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
     std::cout.sync_with_stdio(false);
-//    std::cout.setf(std::ios::fixed, std::ios::floatfield);
     std::cerr.sync_with_stdio(false);
-//    std::cerr.setf(std::ios::fixed, std::ios::floatfield);
     
     const std::string filename(argv[1]);
     std::ifstream infile(filename.c_str(), std::ios::in);
@@ -65,8 +63,8 @@ int main(int argc, char **argv)
                     feed.printCurrentOrderBook(std::cerr);
                     counter = 0;
                 }
+                feed.printMidQuotesAndTrades(std::cerr);
             }
-            feed.printMidQuotes(std::cerr);
             sbuffer.seek(pos+1);
         }
     }

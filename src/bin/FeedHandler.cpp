@@ -6,56 +6,63 @@
 bool FeedHandler::processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose)
 {
     Parser p;
-    if (!p.parse(data, dataLen, errors, verbose)) return false;
-    switch(p.getAction())
+    if (likely(p.parse(data, dataLen, errors, verbose)))
     {
-    case static_cast<char>(Parser::Action::ADD):
-        switch(p.getSide())
+        switch(p.getAction())
         {
-        case static_cast<char>(Parser::Side::BUY):
-            return newBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
-        case static_cast<char>(Parser::Side::SELL):
-            return newSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+        case static_cast<char>(Parser::Action::ADD):
+            switch(p.getSide())
+            {
+            case static_cast<char>(Parser::Side::BUY):
+                return newBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+            case static_cast<char>(Parser::Side::SELL):
+                return newSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+            }
+        case static_cast<char>(Parser::Action::CANCEL):
+            switch(p.getSide())
+            {
+            case static_cast<char>(Parser::Side::BUY):
+                return cancelBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+            case static_cast<char>(Parser::Side::SELL):
+                return cancelSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+            }
+        case static_cast<char>(Parser::Action::MODIFY):
+            switch(p.getSide())
+            {
+            case static_cast<char>(Parser::Side::BUY):
+                return modifyBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+            case static_cast<char>(Parser::Side::SELL):
+                return modifySellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
+            }
+        case static_cast<char>(Parser::Action::TRADE):
+            return treatTrade(Trade{p.getQty(), p.getPrice()});
+        default: ;
         }
-    case static_cast<char>(Parser::Action::CANCEL):
-        switch(p.getSide())
-        {
-        case static_cast<char>(Parser::Side::BUY):
-            return cancelBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
-        case static_cast<char>(Parser::Side::SELL):
-            return cancelSellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
-        }
-    case static_cast<char>(Parser::Action::MODIFY):
-        switch(p.getSide())
-        {
-        case static_cast<char>(Parser::Side::BUY):
-            return modifyBuyOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
-        case static_cast<char>(Parser::Side::SELL):
-            return modifySellOrder(p.getOrderId(), Order{p.getQty(), p.getPrice()}, errors, verbose);
-        }
-    case static_cast<char>(Parser::Action::TRADE):
-        break;
     }
     return false;
 }
 
-void FeedHandler::printMidQuotes(std::ostream& os) const
+void FeedHandler::printMidQuotesAndTrades(std::ostream& os)
 {
     StrStream strstream;
     if (unlikely(bids_.begin() == bids_.end() || asks_.begin() == asks_.end()))
     {
-        strstream << "NAN";
+        strstream << "NAN" << '\n';
+    }
+    else if (receivedNewTrade)
+    {
+        strstream << getQty(currentTrade) << '@' << getPrice(currentTrade) << '\n';
+        receivedNewTrade = false;
     }
     else if (unlikely(getPrice(*bids_.begin()) >= getPrice(*asks_.begin())))
     {
-        strstream << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')';
+        strstream << "Cross BID (" << getPrice(*bids_.begin()) <<  ")/ASK(" << getPrice(*asks_.begin()) << ')' << '\n';
     }
     else
     {
         Price midQuote = (getPrice(*bids_.begin())+getPrice(*asks_.begin()))/2;
-        strstream << midQuote;
+        strstream << midQuote << '\n';
     }
-    strstream << '\n';
     os.rdbuf()->sputn(strstream.c_str(), strstream.length());
     os.flush();
 }
@@ -438,7 +445,7 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
         if (verbose > 0) std::cerr << "Found sell orderId [" << orderId << "] but price differs, modify order rejected" << std::endl;
         return false;
     }
-
+    
     auto itAsks = std::lower_bound(asks_.begin(), asks_.end(), getPrice(order), 
         [](Limit& l, Price p) -> bool
         {
@@ -466,6 +473,20 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
     }
 
     itOrder->second = std::move(order);
+    return true;
+}
+
+bool FeedHandler::treatTrade(Trade&& newTrade)
+{
+    receivedNewTrade = true;
+    if (getPrice(newTrade) == getPrice(currentTrade))
+    {
+        getQty(currentTrade) += getQty(newTrade);
+    }
+    else
+    {
+        currentTrade = std::move(newTrade);
+    }
     return true;
 }
 

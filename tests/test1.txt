@@ -1,6 +1,6 @@
 // action,orderid,side,quantity,price
-// action = A (add), X (remove), M (modify)
-// side = B (buy), S (sell)
+    // action = A (add), X (remove), M (modify)
+    // side = B (buy), S (sell)
 
 A,100000,S,1,1075
 A,100001,B,9,1000
@@ -11,3 +11,22 @@ A,100005,S,2,1025
 A,100006,B,1,1000
 X,100004,B,10,950 // cancel
 A,100007,S,5,1025
+
+ // cross because trade will follow
+A,100008,B,3,1050
+T,2,1025
+T,1,1025
+X,100008,B,3,1050
+X,100005,S,2,1025
+M,100007,S,4,1025
+
+A,100005,B,17,1020 // reuse same cancelled orderId
+A,100008,B,3,1020
+
+A,100009,S,25,1000
+T,20,1000
+T,5,1000
+X,100009,S,25,1000
+X,100005,B,17,1020
+X,100008,B,3,1020
+M,100001,B,4,1000

@@ -19,7 +19,7 @@ public:
     bool processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose = 0);
 
     void printCurrentOrderBook(std::ostream& os) const;
-    void printMidQuotes(std::ostream& os) const;
+    void printMidQuotesAndTrades(std::ostream& os);
     void printErrors(std::ostream& os, Errors& errors, const int verbose = 0);
   
     using Order = std::tuple<Quantity, Price>;
@@ -33,6 +33,7 @@ public:
     static Price& getPrice(Limit& limit) { return std::get<1>(limit); }
     static AggregatedQty getQty(const Limit& limit) { return std::get<0>(limit); }
     static Price getPrice(const Limit& limit) { return std::get<1>(limit); }
+    using Trade = std::tuple<AggregatedQty, Price>;
     
 protected:
     bool newBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
@@ -44,8 +45,12 @@ protected:
     bool modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
     bool modifySellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
     
+    bool treatTrade(Trade&& newTrade);
+    
     std::deque<Limit> bids_, asks_;
     std::unordered_map<OrderId, Order> buyOrders_, sellOrders_;
+    Trade currentTrade{0ULL, 0.0};
+    bool receivedNewTrade = false;
 };
 
 
