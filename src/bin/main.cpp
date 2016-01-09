@@ -3,6 +3,11 @@
 
 #include <cstring>
 
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
 #include <chrono>
 using namespace std::chrono;
 
@@ -24,56 +29,60 @@ int main(int argc, char **argv)
     std::cerr.sync_with_stdio(false);
     
     const std::string filename(argv[1]);
-    std::ifstream infile(filename.c_str(), std::ios::in);
-    if (!infile.is_open())
+    int fd = open(filename.c_str(), O_RDONLY, 0);
+    if (-1 == fd)
     {
         std::cerr << "Expected a file (see usage) or [" << filename << "] not readable!" << std::endl;
         return -1;
     }
-    infile.sync_with_stdio(false);
+    auto getFilesize = [](const std::string& filename)
+    {
+        struct stat st;
+        stat(filename.c_str(), &st);
+        return st.st_size;
+    };
+    size_t filesize = getFilesize(filename);
     
     high_resolution_clock::time_point start = high_resolution_clock::now();
-
+    
+    void* mmappedData = mmap(0, filesize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+    if (unlikely(mmappedData == MAP_FAILED))
+    {
+        std::cerr << "Unable to mmap file [" << filename << "]!" << std::endl;
+        return -1;
+    }
+    SimpleBuffer sbuffer(static_cast<char*>(mmappedData), filesize);
+    sbuffer.seekEnd(filesize);
+    
     FeedHandler feed;
-    SimpleBuffer sbuffer;
     Errors errors;
     int counter = 0;
-    while (infile.good())
+    while(sbuffer.available())
     {
-        infile.read(sbuffer.dataEnd(), sbuffer.freeSpace());
-        sbuffer.seekEnd(infile.gcount());
-        if (unlikely(sbuffer.freeSpace() < 1024))
+        auto pos = sbuffer.getPosition('\n');
+        if (unlikely(pos < 0)) break;
+        if (likely(feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose)))
         {
-            sbuffer.pushOnLeft();
-            if (unlikely(sbuffer.freeSpace() < 1024))
+            ++counter;
+            if (counter > 10)
             {
-                std::cerr << "Bad input file: line too long to process!" << std::endl;
-                break;
+                feed.printCurrentOrderBook(std::cerr);
+                counter = 0;
             }
+            feed.printMidQuotesAndTrades(std::cerr, errors);
         }
-        while(sbuffer.available())
-        {
-            auto pos = sbuffer.getPosition('\n');
-            if (pos < 0) break;
-            if (likely(feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose)))
-            {
-                ++counter;
-                if (counter > 10)
-                {
-                    feed.printCurrentOrderBook(std::cerr);
-                    counter = 0;
-                }
-                feed.printMidQuotesAndTrades(std::cerr, errors);
-            }
-            sbuffer.seek(pos+1);
-        }
-    }
+        sbuffer.seek(pos+1);        
+    }    
     feed.printCurrentOrderBook(std::cout);
     feed.printErrors(std::cout, errors, verbose);
-    
+        
     high_resolution_clock::time_point end = high_resolution_clock::now();
     auto howlong = duration<double>(end - start);
     std::cout << "Overall run perfs : " << duration_cast<seconds>(howlong).count() << " sec "
         << duration_cast<microseconds>(howlong).count() << " usec " << std::endl;
+        
+    munmap(mmappedData, filesize);
+    close(fd);
     return 0;
 }
+

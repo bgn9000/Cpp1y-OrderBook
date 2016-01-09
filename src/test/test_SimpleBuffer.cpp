@@ -2,6 +2,11 @@
 
 #include "SimpleBuffer.h"
 
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
 #include <chrono>
 using namespace std::chrono;
 
@@ -118,9 +123,11 @@ int main()
     
     time_span1 = 0ULL, time_span2 = 0ULL;
     nbTests = 0U;
+    auto time_span3 = 0ULL;
     rc::check("Read files line by line", [&]()
     {
-        std::ifstream infile1("test_FeedHandler.cpp", std::ios::in);
+        std::string filename("test_FeedHandler.cpp");
+        std::ifstream infile1(filename, std::ios::in);
         infile1.sync_with_stdio(false);
         SimpleBuffer sbuffer;
         auto nbLignes1 = 0;
@@ -142,7 +149,7 @@ int main()
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
-        std::ifstream infile2("test_FeedHandler.cpp", std::ios::in);
+        std::ifstream infile2(filename, std::ios::in);
         infile2.sync_with_stdio(false);
         std::string line;        
         auto nbLignes2 = 0;
@@ -151,14 +158,45 @@ int main()
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
         
+        int fd = open(filename.c_str(), O_RDONLY, 0);
+        auto getFilesize = [&]()
+        {
+            struct stat st;
+            stat(filename.c_str(), &st);
+            return st.st_size;
+        };
+        auto nbLignes3 = 0;
+        start = high_resolution_clock::now();
+        size_t filesize = getFilesize();
+        void* mmappedData = mmap(NULL, filesize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+        if (likely(mmappedData != MAP_FAILED))
+        {
+            SimpleBuffer sbuffer2(static_cast<char*>(mmappedData), filesize);
+            sbuffer2.seekEnd(filesize);
+            while(sbuffer2.available())
+            {
+                auto pos = sbuffer2.getPosition('\n');
+                if (pos < 0) break;
+                ++nbLignes3;
+                sbuffer2.seek(pos+1);
+            }
+            munmap(mmappedData, filesize);
+        }
+        end = high_resolution_clock::now();
+        time_span3 += duration_cast<nanoseconds>(end - start).count();
+        close(fd);
+        
         ++nbTests;
         
         RC_ASSERT(nbLignes1 == nbLignes2);
+        RC_ASSERT(nbLignes1 == nbLignes3);
     });
     if (nbTests)
     {
         std::cout << "Read files line by line [" << time_span1/nbTests 
-            << "] std::getline [" << time_span2/nbTests << "] (in ns)" << std::endl;
+            << "] std::getline [" << time_span2/nbTests
+            << "] with mmap [" << time_span3/nbTests  
+            << "] (in ns)" << std::endl;
     }
     
     return 0;

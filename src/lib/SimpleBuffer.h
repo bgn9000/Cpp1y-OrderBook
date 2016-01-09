@@ -10,6 +10,7 @@ class SimpleBuffer
 protected :
     size_t capacity_ = 0;
     char* str_ = nullptr;
+    bool toDelete = false;
 
     size_t begin_ = 0;
     size_t end_ = 0;
@@ -18,14 +19,18 @@ public :
     static constexpr size_t SIMPLE_BUFFER_SIZE = (1024 * 1000);
     
     SimpleBuffer(size_t capacity = SIMPLE_BUFFER_SIZE)
-        : capacity_(capacity), str_(new char[capacity])
+        : capacity_(capacity), str_(new char[capacity]), toDelete(true)
+    {
+    }
+    SimpleBuffer(char* str, size_t len)
+        : capacity_(len), str_(str), toDelete(false)
     {
     }
     SimpleBuffer(const SimpleBuffer&) = delete;
     SimpleBuffer& operator=(const SimpleBuffer&) = delete;
     ~SimpleBuffer()
     {
-        if (likely(str_ != nullptr)) delete[] str_;
+        if (unlikely(toDelete)) delete[] str_;
     }
     
     void push(const char* str, size_t len)
