@@ -43,6 +43,8 @@ int main(int argc, char **argv)
     };
     size_t filesize = getFilesize(filename);
     
+//    mlockall(MCL_FUTURE);
+
     high_resolution_clock::time_point start = high_resolution_clock::now();
     
     void* mmappedData = mmap(0, filesize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
@@ -53,6 +55,8 @@ int main(int argc, char **argv)
     }
     SimpleBuffer sbuffer(static_cast<char*>(mmappedData), filesize);
     sbuffer.seekEnd(filesize);
+//    mlockall(MCL_CURRENT|MCL_FUTURE);
+//    mlock(mmappedData, filesize);
     
     FeedHandler feed;
     Errors errors;
