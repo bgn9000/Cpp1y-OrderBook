@@ -66,8 +66,16 @@ namespace common
         // Order Management
         unsigned long long duplicateOrderIds = 0;
         unsigned long long modifiesWithUnknownOrderId = 0;
+        unsigned long long modifiesNotMatchedPrice = 0;
         unsigned long long cancelsWithUnknownOrderId = 0;
+        unsigned long long cancelsNotMatchedQtyOrPrice = 0;
         unsigned long long bestBidEqualOrUpperThanBestAsk = 0;
+        
+        // Critical errors that should never happen
+        unsigned long long modifiesLimitQtyTooLow = 0;
+        unsigned long long modifiesLimitNotFound = 0;
+        unsigned long long cancelsLimitQtyTooLow = 0;
+        unsigned long long cancelsLimitNotFound = 0;
         
         unsigned long long nbErrors()
         {
@@ -91,8 +99,18 @@ namespace common
                     outOfBoundsPrices +
                     duplicateOrderIds +
                     modifiesWithUnknownOrderId +
+                    modifiesNotMatchedPrice +
                     cancelsWithUnknownOrderId +
+                    cancelsNotMatchedQtyOrPrice +
                     bestBidEqualOrUpperThanBestAsk;
+        }
+        
+        unsigned long long nbCriticalErrors()
+        {
+            return  modifiesLimitQtyTooLow +
+                    modifiesLimitNotFound +
+                    cancelsLimitQtyTooLow +
+                    cancelsLimitNotFound;
         }
     };
 }

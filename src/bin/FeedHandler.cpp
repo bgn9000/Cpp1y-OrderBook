@@ -36,7 +36,9 @@ bool FeedHandler::processMessage(const char* data, size_t dataLen, Errors& error
             }
         case static_cast<char>(Parser::Action::TRADE):
             return treatTrade(Trade{p.getQty(), p.getPrice()});
-        default: ;
+        default: 
+            ++errors.wrongActions;
+            break;
         }
     }
     return false;
@@ -146,9 +148,12 @@ void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbos
     {
         strstream << "\n [" << errors.blankLines << "] blank lines";
     }
-
-    if (unlikely(errors.nbErrors() > 0))
+    
+    auto nbErrors = errors.nbErrors();
+    if (unlikely(nbErrors > 0))
     {
+        strstream << "\nFound " << nbErrors << " error:";
+        
         // Parsing
         if (unlikely(errors.corruptedMessages))
         {
@@ -232,9 +237,17 @@ void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbos
         {
             strstream << "\n [" << errors.modifiesWithUnknownOrderId << "] modifies with unknown OrderIds";
         }
+        if (unlikely(errors.modifiesNotMatchedPrice))
+        {
+            strstream << "\n [" << errors.modifiesNotMatchedPrice << "] modifies with not matched order price";
+        }
         if (unlikely(errors.cancelsWithUnknownOrderId))
         {
             strstream << "\n [" << errors.cancelsWithUnknownOrderId << "] cancels with unknown OrderIds";
+        }
+        if (unlikely(errors.cancelsNotMatchedQtyOrPrice))
+        {
+            strstream << "\n [" << errors.cancelsNotMatchedQtyOrPrice << "] cancels with not matched order price";
         }
         if (unlikely(errors.bestBidEqualOrUpperThanBestAsk))
         {
@@ -243,8 +256,19 @@ void FeedHandler::printErrors(std::ostream& os, Errors& errors, const int verbos
     }        
     else
     {
-        strstream << "\n no error found";
+        strstream << "\nNo error found";
     }
+    
+    auto nbCriticalErrors = errors.nbCriticalErrors();
+    if (unlikely(nbCriticalErrors > 0))
+    {
+        strstream << "\nFound [" << nbCriticalErrors << "] critical error:";
+    }
+    else
+    {
+        strstream << "\nNo critical error found";
+    }
+    
     strstream << '\n';
     if (unlikely(verbose))
         strstream << "Summary length: " << strstream.length() << '\n';
@@ -316,6 +340,7 @@ bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
     if (unlikely(getQty(itOrder->second) != getQty(order) || getPrice(itOrder->second) != getPrice(order)))
     {
         if (verbose > 0) std::cerr << "Found buy orderId [" << orderId << "] but order info differs, cancel order rejected" << std::endl;
+        ++errors.cancelsNotMatchedQtyOrPrice;
         return false;
     }
     
@@ -330,6 +355,7 @@ bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
         {
             if (verbose > 0) std::cerr << "Unexpected issue with buy orderId [" << orderId 
                 << "] but order qty upper than bid qty, cancel order aborted" << std::endl;
+            ++errors.cancelsLimitQtyTooLow;
             return false;
         }
         getQty(*itBids) -= getQty(order);
@@ -341,6 +367,7 @@ bool FeedHandler::cancelBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
     else
     {
         if (verbose > 0) std::cerr << "Limit not found for orderId [" << orderId << "], cancel order failed" << std::endl;
+        ++errors.cancelsLimitNotFound;
         return false;
     }
     
@@ -360,6 +387,7 @@ bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, E
     if (unlikely(getQty(itOrder->second) != getQty(order) || getPrice(itOrder->second) != getPrice(order)))
     {
         if (verbose > 0) std::cerr << "Found sell orderId [" << orderId << "] but order info differs, cancel order rejected" << std::endl;
+        ++errors.cancelsNotMatchedQtyOrPrice;
         return false;
     }
     
@@ -374,6 +402,7 @@ bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, E
         {
             if (verbose > 0) std::cerr << "Unexpected issue with sell orderId [" << orderId 
                 << "] but order qty upper than ask qty, cancel order aborted" << std::endl;
+            ++errors.cancelsLimitQtyTooLow;
             return false;
         }
         getQty(*itAsks) -= getQty(order);
@@ -385,6 +414,7 @@ bool FeedHandler::cancelSellOrder(OrderId orderId, FeedHandler::Order&& order, E
     else
     {
         if (verbose > 0) std::cerr << "Limit not found for orderId [" << orderId << "], cancel order failed" << std::endl;
+        ++errors.cancelsLimitNotFound;
         return false;
     }
     
@@ -404,6 +434,7 @@ bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
     if (unlikely(getPrice(itOrder->second) != getPrice(order)))
     {
         if (verbose > 0) std::cerr << "Found buy orderId [" << orderId << "] but price differs, modify order rejected" << std::endl;
+        ++errors.modifiesNotMatchedPrice;
         return false;
     }
 
@@ -418,6 +449,7 @@ bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
         {
             if (verbose > 0) std::cerr << "Unexpected issue with buy orderId [" << orderId 
                 << "] but order qty upper than bid qty, modify order aborted" << std::endl;
+            ++errors.modifiesLimitQtyTooLow;
             return false;
         }
         getQty(*itBids) -= getQty(itOrder->second);
@@ -430,6 +462,7 @@ bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
     else
     {
         if (verbose > 0) std::cerr << "Limit not found for orderId [" << orderId << "], modify order failed" << std::endl;
+        ++errors.modifiesLimitNotFound;
         return false;
     }
 
@@ -449,6 +482,7 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
     if (unlikely(getPrice(itOrder->second) != getPrice(order)))
     {
         if (verbose > 0) std::cerr << "Found sell orderId [" << orderId << "] but price differs, modify order rejected" << std::endl;
+        ++errors.modifiesNotMatchedPrice;
         return false;
     }
     
@@ -463,6 +497,7 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
         {
             if (verbose > 0) std::cerr << "Unexpected issue with sell orderId [" << orderId 
                 << "] but order qty upper than ask qty, modify order aborted" << std::endl;
+            ++errors.modifiesLimitQtyTooLow;
             return false;
         }
         getQty(*itAsks) -= getQty(itOrder->second);
@@ -475,6 +510,7 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
     else
     {
         if (verbose > 0) std::cerr << "Limit not found for orderId [" << orderId << "], modify order failed" << std::endl;
+        ++errors.modifiesLimitNotFound;
         return false;
     }
 

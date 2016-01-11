@@ -29,11 +29,11 @@ public:
     static Price getPrice(const Order& order) { return std::get<1>(order); }
     
     using Limit = std::tuple<AggregatedQty, Price>;
+    using Trade = std::tuple<AggregatedQty, Price>;
     static AggregatedQty& getQty(Limit& limit) { return std::get<0>(limit); }
     static Price& getPrice(Limit& limit) { return std::get<1>(limit); }
     static AggregatedQty getQty(const Limit& limit) { return std::get<0>(limit); }
     static Price getPrice(const Limit& limit) { return std::get<1>(limit); }
-    using Trade = std::tuple<AggregatedQty, Price>;
     
 protected:
     bool newBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
