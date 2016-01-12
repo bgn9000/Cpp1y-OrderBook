@@ -95,9 +95,9 @@ int main(int argc, char **argv)
     }
     std::cout << "Verbose is " << verbose << " : default is 0, param '-v 1 or higher' to activate it" << std::endl;
     
-    std::cout << "Alignement for AggregatedQty = " << alignof(AggregatedQty) << std::endl;
-    std::cout << "Alignement for Price = "  << alignof(Price) << std::endl;
-    std::cout << "Alignement for Limit = "  << alignof(FeedHandler::Limit) << " whereas size is " << sizeof(FeedHandler::Limit) << std::endl;
+    std::cout << "Alignment for AggregatedQty = " << alignof(AggregatedQty) << std::endl;
+    std::cout << "Alignment for Price = "  << alignof(Price) << std::endl;
+    std::cout << "Alignment for Limit = "  << alignof(FeedHandler::Limit) << " whereas size is " << sizeof(FeedHandler::Limit) << std::endl;
     
     
     auto time_span1 = 0ULL, time_span2 = 0ULL;

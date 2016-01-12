@@ -298,7 +298,7 @@ bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, Error
     {
         bids_.insert(itBids, order);
     }
-    buyOrders_.emplace(orderId, std::move(order));
+    buyOrders_.emplace(orderId, std::forward<Order>(order));
     return true;
 }
 
@@ -324,7 +324,7 @@ bool FeedHandler::newSellOrder(OrderId orderId, FeedHandler::Order&& order, Erro
     {
         asks_.insert(itAsks, order);
     }
-    sellOrders_.emplace(orderId, std::move(order));
+    sellOrders_.emplace(orderId, std::forward<Order>(order));
     return true;
 }
 
@@ -466,7 +466,7 @@ bool FeedHandler::modifyBuyOrder(OrderId orderId, FeedHandler::Order&& order, Er
         return false;
     }
 
-    itOrder->second = std::move(order);
+    itOrder->second = std::forward<Order>(order);
     return true;
 }
 
@@ -514,7 +514,7 @@ bool FeedHandler::modifySellOrder(OrderId orderId, FeedHandler::Order&& order, E
         return false;
     }
 
-    itOrder->second = std::move(order);
+    itOrder->second = std::forward<Order>(order);
     return true;
 }
 
@@ -527,7 +527,7 @@ bool FeedHandler::treatTrade(Trade&& newTrade)
     }
     else
     {
-        currentTrade_ = std::move(newTrade);
+        currentTrade_ = std::forward<Trade>(newTrade);
     }
     return true;
 }
