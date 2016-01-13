@@ -17,7 +17,7 @@ public:
     static constexpr size_t CAPACITY = _BlockCapacity;
     static_assert(((CAPACITY > 0) && ((CAPACITY & (~CAPACITY + 1)) == CAPACITY)), "Block capacity must be a positive power of 2");
     
-    static size_t capacity()
+    static auto capacity()
     {
         return CAPACITY;
     }
@@ -26,21 +26,21 @@ public:
     ~CircularBlock() = default;
     CircularBlock(const CircularBlock&) = delete;
     CircularBlock& operator=(const CircularBlock&) = delete;
-
+    
     void fill(T&& data)
     {
-        while (size_.load(std::memory_order::memory_order_acquire) >=  _BlockCapacity) // spin loop
+        while (size_.load(std::memory_order::memory_order_acquire) >=  CAPACITY) // spin loop
             if (unlikely(dontSpin_)) return;
-        if (++last_ == _BlockCapacity) last_ = 0;
+        if (++last_ == CAPACITY) last_ = 0;
         array_[last_] = std::forward<T>(data);
         size_.fetch_add(1, std::memory_order::memory_order_release);
     }
 
-    T empty()
+    auto empty()
     {
         while (size_.load(std::memory_order::memory_order_acquire) == 0) // spin loop
             if (unlikely(dontSpin_)) return T();
-        if (++first_ == _BlockCapacity) first_ = 0;
+        if (++first_ == CAPACITY) first_ = 0;
         size_.fetch_sub(1, std::memory_order::memory_order_release);
         return array_[first_];
     }
@@ -49,9 +49,9 @@ public:
 
 protected:
     bool dontSpin_ = false;
-    size_t first_ = _BlockCapacity-1;
-    size_t last_ = _BlockCapacity-1;
+    size_t first_ = CAPACITY-1;
+    size_t last_ = CAPACITY-1;
     std::atomic<size_t> size_{0UL};
 
-    std::array<T, _BlockCapacity> array_;
+    std::array<T, CAPACITY> array_;
 };

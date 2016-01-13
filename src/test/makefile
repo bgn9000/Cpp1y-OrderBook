@@ -11,7 +11,7 @@ TARGETS:=$(SOURCES:.cpp=.out)
 
 INCS=-I../lib -I../bin -I../../tools/rapidcheck/include
 
-CFLAGS=-O2 -m64 -fPIC -g -ggdb -Wno-unused-but-set-variable -Wno-unused-variable
+CFLAGS=-O2 -m64 -fPIC -g -ggdb -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function
 CFLAGS += -std=c++1y -D_REENTRANT -DLinux 
 
 ifneq "" "$(findstring $(sanitize), 1 on On ON)"

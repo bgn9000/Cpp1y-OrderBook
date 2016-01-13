@@ -1,58 +1,52 @@
 #pragma once
 
 #include "Common.h"
+#include "CircularBlock.h"
 
-#include <tuple>
 #include <unordered_map>
 #include <deque>
 
 using namespace common;
 
 class FeedHandler
-{    
+{
 public:
-    FeedHandler() = default;
+    struct Data
+    {
+        Data() = default;
+        Data(char action, char side, unsigned int pos, Limit&& limit = Limit{0, 0.0})
+            : action_(action), side_(side), pos_(pos), limit_(limit)
+        {
+        }
+        
+        char pad1_[64] = "";
+        char action_ = 0;
+        char side_ = 0;
+        unsigned int pos_ = 0;
+        Limit limit_{0, 0.0};
+        char pad2_[64] = "";
+    };
+    
+    FeedHandler(CircularBlock<Data>& block) : block_(block) {}
     ~FeedHandler() = default;
     FeedHandler(const FeedHandler&) = delete;
     FeedHandler& operator=(const FeedHandler&) = delete;
 
-    bool processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose = 0);
-
-    void printCurrentOrderBook(std::ostream& os) const;
-    void printMidQuotesAndTrades(std::ostream& os, Errors& errors);
-    void printErrors(std::ostream& os, Errors& errors, const int verbose = 0);
-  
-    using Order = std::tuple<Quantity, Price>;
-    static Quantity& getQty(Order& order) { return std::get<0>(order); }
-    static Price& getPrice(Order& order) { return std::get<1>(order); }
-    static Quantity getQty(const Order& order) { return std::get<0>(order); }
-    static Price getPrice(const Order& order) { return std::get<1>(order); }
-    
-    using Limit = std::tuple<AggregatedQty, Price>;
-    using Trade = std::tuple<AggregatedQty, Price>;
-    static AggregatedQty& getQty(Limit& limit) { return std::get<0>(limit); }
-    static Price& getPrice(Limit& limit) { return std::get<1>(limit); }
-    static AggregatedQty getQty(const Limit& limit) { return std::get<0>(limit); }
-    static Price getPrice(const Limit& limit) { return std::get<1>(limit); }
-    
+    void processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose = 0);
+        
 protected:
-    bool newBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
-    bool newSellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
+    void newBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
+    void newSellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
     
-    bool cancelBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
-    bool cancelSellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
+    void cancelBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
+    void cancelSellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
     
-    bool modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
-    bool modifySellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
-    
-    bool treatTrade(Trade&& newTrade);
+    void modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
+    void modifySellOrder(OrderId orderId, Order&& order, Errors& errors, const int verbose = 0);
     
     std::deque<Limit> bids_, asks_;
     std::unordered_map<OrderId, Order> buyOrders_, sellOrders_;
-    Trade currentTrade_{0ULL, 0.0};
-    bool receivedNewTrade_ = false;
-    bool detectCross_ = false;
+    
+    CircularBlock<Data>& block_;
 };
-
-
 

@@ -28,9 +28,7 @@ public:
 
 int main()
 {
-    const int cacheLineSize = cache_line_size();
-    std::cout << "Cache line is " << cacheLineSize << std::endl;
-    assert(cacheLineSize == 64);
+    assert(cacheLinesSze == cache_line_size());
     
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
@@ -39,10 +37,21 @@ int main()
         rcCircularBlock<int> block;
         const auto nb = *rc::gen::inRange<size_t>(10, block.capacity()-1);
         
+        for (auto i = 1UL; i <= nb; ++i)
+        {
+            block.fill(i);
+        }
+        RC_ASSERT(nb == block.getSize());
+        for (auto i = 1UL; i <= nb; ++i)
+        {
+            RC_ASSERT(block.empty() == static_cast<int>(i));
+        }
+        RC_ASSERT(0UL == block.getSize());
+        
         high_resolution_clock::time_point start = high_resolution_clock::now();
         for (auto i = 1UL; i <= nb; ++i)
         {
-            block.fill(int(i));
+            block.fill(i);
         }
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += (duration_cast<nanoseconds>(end - start).count()) / nb;
@@ -115,15 +124,14 @@ int main()
     rc::check("Dual threads fill and empty with aligned to cache lines (false sharing)", [&]() 
     {
         CircularBlock<int, 2> waitThread;
-//        typedef struct alignas(64) { int data_ = 0; } Data;
-        typedef struct { int pad1[8]; int data_ = 0; int pad2[7]; } Data;
+        typedef struct { char pad1[cacheLinesSze]; int data_ = 0; char pad2[cacheLinesSze]; } Data;
         rcCircularBlock<Data> block;
         const auto nb = *rc::gen::inRange<size_t>(10, block.capacity()-1);
         
         auto threaded_emptyBlock = [&]() 
         {
-            waitThread.fill(0); // tell thread ready
             auto j = Data();
+            waitThread.fill(0); // tell thread ready
             high_resolution_clock::time_point start = high_resolution_clock::now();
             for (auto i = 1UL; i <= nb; ++i)
             {
@@ -152,7 +160,7 @@ int main()
     });
     if (nbTests)
     {
-        std::cout << "Dual threads fill and empty perfs [" << time_span1/nbTests 
+        std::cout << "Dual threads fill and empty (false sharing) perfs [" << time_span1/nbTests 
             << '|' << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     

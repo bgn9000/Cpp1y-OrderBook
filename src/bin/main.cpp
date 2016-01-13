@@ -1,4 +1,5 @@
 #include "FeedHandler.h"
+#include "Reporter.h"
 #include "SimpleBuffer.h"
 
 #include <cstring>
@@ -8,6 +9,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include <thread>
 #include <chrono>
 using namespace std::chrono;
 
@@ -58,27 +60,43 @@ int main(int argc, char **argv)
 //    mlockall(MCL_CURRENT|MCL_FUTURE);
 //    mlock(mmappedData, filesize);
     
-    FeedHandler feed;
+    CircularBlock<FeedHandler::Data> block;
+    FeedHandler feed(block);
+    Reporter reporter;
     Errors errors;
-    int counter = 0;
+    auto threaded_reporter = [&]() 
+    {
+        auto counter = 0;
+        while(1)
+        {
+            if (likely(reporter.processData(block.empty())))
+            {
+                ++counter;
+                if (counter > 10)
+                {
+                    reporter.printCurrentOrderBook(std::cerr);
+                    counter = 0;
+                }
+                reporter.printMidQuotesAndTrades(std::cerr, errors);
+            }
+            else break;
+        }
+    };
+    std::thread thr(threaded_reporter);
+    
     while(sbuffer.available())
     {
         auto pos = sbuffer.getPosition('\n');
         if (unlikely(pos < 0)) break;
-        if (likely(feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose)))
-        {
-            ++counter;
-            if (counter > 10)
-            {
-                feed.printCurrentOrderBook(std::cerr);
-                counter = 0;
-            }
-            feed.printMidQuotesAndTrades(std::cerr, errors);
-        }
-        sbuffer.seek(pos+1);        
-    }    
-    feed.printCurrentOrderBook(std::cout);
-    feed.printErrors(std::cout, errors, verbose);
+        feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose);
+        sbuffer.seek(pos+1);
+    }
+    
+    block.dontSpin();
+    thr.join();
+    
+    reporter.printCurrentOrderBook(std::cout);
+    reporter.printErrors(std::cout, errors, verbose);
         
     high_resolution_clock::time_point end = high_resolution_clock::now();
     auto howlong = duration<double>(end - start);

@@ -5,16 +5,32 @@
 #include <iomanip>
 #include <fstream>
 #include <algorithm>
+#include <tuple>
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
 namespace common
 {
+    static constexpr int cacheLinesSze = 64;
+
     using OrderId = unsigned int;
     using Quantity = unsigned int;
     using AggregatedQty = unsigned long long;
     using Price = double;
+    
+    using Order = std::tuple<Quantity, Price>;
+    static Quantity& getQty(Order& order) { return std::get<0>(order); }
+    static Price& getPrice(Order& order) { return std::get<1>(order); }
+    static Quantity getQty(const Order& order) { return std::get<0>(order); }
+    static Price getPrice(const Order& order) { return std::get<1>(order); }
+    
+    using Limit = std::tuple<AggregatedQty, Price>;
+    using Trade = std::tuple<AggregatedQty, Price>;
+    static AggregatedQty& getQty(Limit& limit) { return std::get<0>(limit); }
+    static Price& getPrice(Limit& limit) { return std::get<1>(limit); }
+    static AggregatedQty getQty(const Limit& limit) { return std::get<0>(limit); }
+    static Price getPrice(const Limit& limit) { return std::get<1>(limit); }
     
     static constexpr int maxOrderId = (1'000'000'000 -1);
     static constexpr int maxOrderQty = (1'000'000 -1);
