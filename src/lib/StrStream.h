@@ -10,7 +10,7 @@ using namespace common;
 class StrStream : public FiniteStr<>
 {
 public:
-    static constexpr size_t CAPACITY_MAX = 32768;
+    static constexpr size_t CAPACITY_MAX = 32768 -1;
     
     StrStream() = default;
     StrStream(const StrStream&) = delete;
@@ -22,7 +22,7 @@ public:
         FiniteStr<>::clear();
         if (unlikely(strOver_ != nullptr))
         {
-            free(strOver_);
+            delete [] strOver_;
             strOver_ = nullptr;
         }
     }

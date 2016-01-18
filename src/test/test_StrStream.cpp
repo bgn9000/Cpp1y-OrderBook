@@ -75,35 +75,31 @@ int main()
     
     time_span1 = 0ULL, time_span2 = 0ULL;
     nbTests = 0U;
-    rc::check("Consider sputn", [&](std::string str) 
-    {        
+    rc::check("Consider sputn instead of operator<<", [&](std::string str) 
+    {
         std::ofstream null("/dev/null");
         null.sync_with_stdio(false);
+        null << str; // dry run
+        null.flush();
+
         high_resolution_clock::time_point start = high_resolution_clock::now();
         null.rdbuf()->sputn(str.c_str(), str.length());
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         null.flush();
-        
-        ++nbTests;
-    });
-    rc::check("instead of operator<<", [&](std::string str) 
-    {        
-        std::ofstream null("/dev/null");
-        null.sync_with_stdio(false);
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+
+        start = high_resolution_clock::now();
         null << str;
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
         null.flush();
         
         ++nbTests;
     });
-    nbTests /= 2;
     if (nbTests)
     {
         std::cout << "Consider sputn perfs  [" << time_span1/nbTests 
-            << "] instead of [" << time_span2/nbTests << "] (in ns)" << std::endl;
+            << "] instead of operator<< [" << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
     time_span1 = 0ULL, time_span2 = 0ULL;
