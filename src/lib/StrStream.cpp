@@ -7,6 +7,15 @@
 void StrStream::append(const char* str, size_t len)
 {
     size_t addedLen = 0;
+    auto appendBeyond = [&]()
+    {
+        const auto prevSizeOver = sizeOver_;
+        sizeOver_ += (len - addedLen);
+        if (sizeOver_ > CAPACITY_MAX) sizeOver_=CAPACITY_MAX;
+        memcpy(strOver_+prevSizeOver, str+addedLen, sizeOver_-prevSizeOver);
+        strOver_[sizeOver_]=0;
+    };
+    
     if (likely(strOver_ == nullptr))
     {
         size_t prevSize = size();
@@ -14,32 +23,52 @@ void StrStream::append(const char* str, size_t len)
         addedLen = size() - prevSize;
         memcpy(begin() + prevSize, str, addedLen);
 
-        if (len > addedLen)
+        if (unlikely(len > addedLen))
         {
-            strOver_ = static_cast<char*>(malloc(CAPACITY_MAX*sizeof(char)+1));
+            strOver_ = new char[CAPACITY_MAX+1];
             memcpy(strOver_, begin(), size());
             sizeOver_ += size();
+            appendBeyond();
         }
     }
-    if (unlikely(strOver_ != nullptr))
+    else
     {
-        size_t prevSizeOver = sizeOver_;
-        sizeOver_ += (len - addedLen);
-        if (sizeOver_ > CAPACITY_MAX) sizeOver_=CAPACITY_MAX;
-
-        size_t addedLenOver = sizeOver_ - prevSizeOver;
-
-        memcpy(strOver_ + prevSizeOver, str + addedLen, addedLenOver);
-        strOver_[sizeOver_]=0;
+        appendBeyond();
     }
 }
 
 void StrStream::append(size_t pos, char c)
 {
     size_t len = size();
-    if (unlikely(pos < len || pos >= CAPACITY_MAX)) return;
-    resize(pos);
-    memset(begin() + len, c, pos - len);
+    if (unlikely(pos < len)) return;
+    auto appendBeyond = [&]()
+    {
+        const auto prevSizeOver = sizeOver_;
+        sizeOver_ = pos;
+        if (sizeOver_ > CAPACITY_MAX) sizeOver_=CAPACITY_MAX;
+        memset(strOver_+prevSizeOver, c, sizeOver_-prevSizeOver);
+        strOver_[sizeOver_]=0;
+    };
+    
+    if (likely(strOver_ == nullptr))
+    {
+        if (likely(pos < capacity()))
+        {
+            resize(pos);
+            memset(begin() + len, c, pos - len);
+        }
+        else
+        {
+            strOver_ = new char[CAPACITY_MAX+1];
+            memcpy(strOver_, begin(), size());
+            sizeOver_ += size();
+            appendBeyond();
+        }
+    }
+    else
+    {
+        appendBeyond();
+    }
 }
 
 StrStream& StrStream::operator<<(const char* str)
@@ -51,27 +80,33 @@ StrStream& StrStream::operator<<(const char* str)
 StrStream& StrStream::operator<<(char c)
 {
     size_t len = size();
-    if (likely(strOver_ == nullptr))
+    auto appendBeyond = [&]()
     {
-        if (len < capacity())
-        {
-            resize(len + 1);
-            *(begin() + len) = c;
-        }
-        else
-        {
-            strOver_ = static_cast<char*>(malloc(CAPACITY_MAX*sizeof(char)+1));
-            memcpy(strOver_, begin(), size());
-            sizeOver_ += size();
-        }
-    }
-    if (unlikely(strOver_ != nullptr))
-    {
-        if (sizeOver_ < CAPACITY_MAX)
+        if (likely(sizeOver_ < CAPACITY_MAX))
         {
             strOver_[sizeOver_++]=c;
             strOver_[sizeOver_]=0;
         }
+    };
+    
+    if (likely(strOver_ == nullptr))
+    {
+        if (likely(len < capacity()))
+        {
+            resize(len+1);
+            *(begin()+len) = c;
+        }
+        else
+        {
+            strOver_ = new char[CAPACITY_MAX+1];
+            memcpy(strOver_, begin(), size());
+            sizeOver_ += size();
+            appendBeyond();
+        }
+    }
+    else
+    {
+        appendBeyond();
     }
     return *this;
 }
