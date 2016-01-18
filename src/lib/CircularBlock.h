@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <array>
+#include <mutex>
 
 using namespace common;
 
@@ -29,13 +30,13 @@ public:
     
     void fill(T&& data)
     {
-        while (size_.load(std::memory_order::memory_order_acquire) >=  CAPACITY) // spin loop
+        while (size_.load(std::memory_order::memory_order_acquire) >=  CAPACITY-1) // spin loop
             if (unlikely(dontSpin_)) return;
         if (++last_ == CAPACITY) last_ = 0;
         array_[last_] = std::forward<T>(data);
         size_.fetch_add(1, std::memory_order::memory_order_release);
     }
-
+    
     auto empty()
     {
         while (size_.load(std::memory_order::memory_order_acquire) == 0) // spin loop
@@ -52,6 +53,7 @@ protected:
     size_t first_ = CAPACITY-1;
     size_t last_ = CAPACITY-1;
     std::atomic<size_t> size_{0UL};
-
-    std::array<T, CAPACITY> array_;
+    
+//    std::array<T, CAPACITY> array_;
+    std::vector<T> array_{CAPACITY};
 };

@@ -14,10 +14,14 @@ public:
     struct Data
     {
         Data() = default;
-        Data(char action, char side, unsigned int pos, Limit&& limit = Limit{0, 0.0})
+        Data(char action, char side, unsigned int pos, Limit limit = Limit{0, 0.0})
             : action_(action), side_(side), pos_(pos), limit_(limit)
         {
         }
+        Data(const Data& data) = default;
+        Data& operator=(const Data& data) = delete;
+        Data(Data&& data) = default;
+        Data& operator=(Data&& data) = default;
         
         char pad1_[64] = "";
         char action_ = 0;

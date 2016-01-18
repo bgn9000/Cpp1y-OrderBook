@@ -76,21 +76,21 @@ void FeedHandler::newBuyOrder(OrderId orderId, Order&& order, Errors& errors, co
         {
             return (getPrice(l) > p);
         });
-    if (getPrice(*itBids) == getPrice(order))
-    {
-        getQty(*itBids) += getQty(order);
-        block_.fill(
-            Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
-                 static_cast<unsigned int>(itBids-bids_.begin()), std::move(*itBids))
-        );
-    }
-    else
+    if (itBids == bids_.end() || getPrice(*itBids) != getPrice(order))
     {
         block_.fill(
             Data(static_cast<char>(Parser::Action::ADD), static_cast<char>(Parser::Side::BUY), 
                  static_cast<unsigned int>(itBids-bids_.begin()), order)
         );
         bids_.insert(itBids, order);
+    }
+    else
+    {
+        getQty(*itBids) += getQty(order);
+        block_.fill(
+            Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
+                 static_cast<unsigned int>(itBids-bids_.begin()), *itBids)
+        );
     }
     buyOrders_.emplace(orderId, std::forward<Order>(order));
 }
@@ -109,21 +109,21 @@ void FeedHandler::newSellOrder(OrderId orderId, Order&& order, Errors& errors, c
         {
             return (getPrice(l) < p);
         });
-    if (getPrice(*itAsks) == getPrice(order))
-    {
-        getQty(*itAsks) += getQty(order);
-        block_.fill(
-            Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
-                 static_cast<unsigned int>(itAsks-asks_.begin()), std::move(*itAsks))
-        );
-    }
-    else
+    if (itAsks == asks_.end() || getPrice(*itAsks) != getPrice(order))
     {
         block_.fill(
             Data(static_cast<char>(Parser::Action::ADD), static_cast<char>(Parser::Side::SELL), 
                  static_cast<unsigned int>(itAsks-asks_.begin()), order)
         );
         asks_.insert(itAsks, order);
+    }
+    else    
+    {
+        getQty(*itAsks) += getQty(order);
+        block_.fill(
+            Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
+                 static_cast<unsigned int>(itAsks-asks_.begin()), *itAsks)
+        );
     }
     sellOrders_.emplace(orderId, std::forward<Order>(order));
 }
@@ -171,7 +171,7 @@ void FeedHandler::cancelBuyOrder(OrderId orderId, Order&& order, Errors& errors,
         {
             block_.fill(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
-                     static_cast<unsigned int>(itBids-bids_.begin()), std::move(*itBids))
+                     static_cast<unsigned int>(itBids-bids_.begin()), *itBids)
             );
         }
     }
@@ -228,7 +228,7 @@ void FeedHandler::cancelSellOrder(OrderId orderId, Order&& order, Errors& errors
         {
             block_.fill(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
-                     static_cast<unsigned int>(itAsks-asks_.begin()), std::move(*itAsks))
+                     static_cast<unsigned int>(itAsks-asks_.begin()), *itAsks)
             );
         }
     }
@@ -286,7 +286,7 @@ void FeedHandler::modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors,
         {
             block_.fill(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
-                     static_cast<unsigned int>(itBids-bids_.begin()), std::move(*itBids))
+                     static_cast<unsigned int>(itBids-bids_.begin()), *itBids)
             );
         }
     }
@@ -344,7 +344,7 @@ void FeedHandler::modifySellOrder(OrderId orderId, Order&& order, Errors& errors
         {
             block_.fill(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
-                     static_cast<unsigned int>(itAsks-asks_.begin()), std::move(*itAsks))
+                     static_cast<unsigned int>(itAsks-asks_.begin()), *itAsks)
             );
         }
     }
