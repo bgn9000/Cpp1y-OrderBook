@@ -275,6 +275,22 @@ void Reporter::printErrors(std::ostream& os, Errors& errors, const int verbose)
     if (unlikely(nbCriticalErrors > 0))
     {
         strstream << "\nFound [" << nbCriticalErrors << "] critical error:";
+        if (unlikely(errors.modifiesLimitQtyTooLow))
+        {
+            strstream << "\n [" << errors.modifiesLimitQtyTooLow << "] modifies with limit quantity too low";
+        }
+        if (unlikely(errors.modifiesLimitNotFound))
+        {
+            strstream << "\n [" << errors.modifiesLimitNotFound << "] modifies limit not found";
+        }
+        if (unlikely(errors.cancelsLimitQtyTooLow))
+        {
+            strstream << "\n [" << errors.cancelsLimitQtyTooLow << "] cancels with limit quantity too low";
+        }
+        if (unlikely(errors.cancelsLimitNotFound))
+        {
+            strstream << "\n [" << errors.cancelsLimitNotFound << "] cancels limit not found";
+        }
     }
     else
     {
