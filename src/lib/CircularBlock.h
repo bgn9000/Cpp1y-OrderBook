@@ -4,14 +4,13 @@
 
 #include <atomic>
 #include <array>
-#include <mutex>
 
 using namespace common;
 
 // !! Only One publisher / One Listener !!
 // Could consider yielding instead of spin loop
 
-template <typename T, size_t _BlockCapacity = 1024>
+template <typename T, size_t _BlockCapacity = 262'144>
 class CircularBlock
 {
 public:
@@ -37,13 +36,14 @@ public:
         size_.fetch_add(1, std::memory_order::memory_order_release);
     }
     
-    auto empty()
+    auto&& empty()
     {
+        static T nodata;
         while (size_.load(std::memory_order::memory_order_acquire) == 0) // spin loop
-            if (unlikely(dontSpin_)) return T();
+            if (unlikely(dontSpin_)) return std::move(nodata);
         if (++first_ == CAPACITY) first_ = 0;
         size_.fetch_sub(1, std::memory_order::memory_order_release);
-        return array_[first_];
+        return std::move(array_[first_]);
     }
     
     void dontSpin() { dontSpin_ = true; }
@@ -54,6 +54,7 @@ protected:
     size_t last_ = CAPACITY-1;
     std::atomic<size_t> size_{0UL};
     
-//    std::array<T, CAPACITY> array_;
+//too long compilation time for large array:    std::array<T, CAPACITY> array_;
     std::vector<T> array_{CAPACITY};
 };
+

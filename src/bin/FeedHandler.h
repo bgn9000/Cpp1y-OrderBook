@@ -18,7 +18,7 @@ public:
             : action_(action), side_(side), pos_(pos), limit_(limit)
         {
         }
-        Data(const Data& data) = default;
+        Data(const Data& data) = delete;
         Data& operator=(const Data& data) = delete;
         Data(Data&& data) = default;
         Data& operator=(Data&& data) = default;
