@@ -53,7 +53,7 @@ void FeedHandler::processMessage(const char* data, size_t dataLen, Errors& error
             }
             break;
         case static_cast<char>(Parser::Action::TRADE):
-            block_.fill(Data('T', 0, 0, Trade{p.getQty(), p.getPrice()}));
+            queue_.push_back(Data('T', 0, 0, Trade{p.getQty(), p.getPrice()}));
             break;
         default: 
             ++errors.wrongActions;
@@ -78,7 +78,7 @@ void FeedHandler::newBuyOrder(OrderId orderId, Order&& order, Errors& errors, co
         });
     if (itBids == bids_.end() || getPrice(*itBids) != getPrice(order))
     {
-        block_.fill(
+        queue_.push_back(
             Data(static_cast<char>(Parser::Action::ADD), static_cast<char>(Parser::Side::BUY), 
                  static_cast<unsigned int>(itBids-bids_.begin()), order)
         );
@@ -87,7 +87,7 @@ void FeedHandler::newBuyOrder(OrderId orderId, Order&& order, Errors& errors, co
     else
     {
         getQty(*itBids) += getQty(order);
-        block_.fill(
+        queue_.push_back(
             Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
                  static_cast<unsigned int>(itBids-bids_.begin()), *itBids)
         );
@@ -111,7 +111,7 @@ void FeedHandler::newSellOrder(OrderId orderId, Order&& order, Errors& errors, c
         });
     if (itAsks == asks_.end() || getPrice(*itAsks) != getPrice(order))
     {
-        block_.fill(
+        queue_.push_back(
             Data(static_cast<char>(Parser::Action::ADD), static_cast<char>(Parser::Side::SELL), 
                  static_cast<unsigned int>(itAsks-asks_.begin()), order)
         );
@@ -120,7 +120,7 @@ void FeedHandler::newSellOrder(OrderId orderId, Order&& order, Errors& errors, c
     else    
     {
         getQty(*itAsks) += getQty(order);
-        block_.fill(
+        queue_.push_back(
             Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
                  static_cast<unsigned int>(itAsks-asks_.begin()), *itAsks)
         );
@@ -161,7 +161,7 @@ void FeedHandler::cancelBuyOrder(OrderId orderId, Order&& order, Errors& errors,
         getQty(*itBids) -= getQty(order);
         if (getQty(*itBids) == 0)
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::CANCEL), static_cast<char>(Parser::Side::BUY), 
                      static_cast<unsigned int>(itBids-bids_.begin()))
             );
@@ -169,7 +169,7 @@ void FeedHandler::cancelBuyOrder(OrderId orderId, Order&& order, Errors& errors,
         }
         else
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
                      static_cast<unsigned int>(itBids-bids_.begin()), *itBids)
             );
@@ -218,7 +218,7 @@ void FeedHandler::cancelSellOrder(OrderId orderId, Order&& order, Errors& errors
         getQty(*itAsks) -= getQty(order);
         if (getQty(*itAsks) == 0)
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::CANCEL), static_cast<char>(Parser::Side::SELL), 
                      static_cast<unsigned int>(itAsks-asks_.begin()))
             );
@@ -226,7 +226,7 @@ void FeedHandler::cancelSellOrder(OrderId orderId, Order&& order, Errors& errors
         }
         else
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
                      static_cast<unsigned int>(itAsks-asks_.begin()), *itAsks)
             );
@@ -276,7 +276,7 @@ void FeedHandler::modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors,
         getQty(*itBids) += getQty(order);
         if (unlikely(getQty(*itBids) == 0))
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::CANCEL), static_cast<char>(Parser::Side::BUY), 
                      static_cast<unsigned int>(itBids-bids_.begin()))
             );
@@ -284,7 +284,7 @@ void FeedHandler::modifyBuyOrder(OrderId orderId, Order&& order, Errors& errors,
         }
         else
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::BUY), 
                      static_cast<unsigned int>(itBids-bids_.begin()), *itBids)
             );
@@ -334,7 +334,7 @@ void FeedHandler::modifySellOrder(OrderId orderId, Order&& order, Errors& errors
         getQty(*itAsks) += getQty(order);
         if (unlikely(getQty(*itAsks) == 0))
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::CANCEL), static_cast<char>(Parser::Side::SELL), 
                      static_cast<unsigned int>(itAsks-asks_.begin()))
             );
@@ -342,7 +342,7 @@ void FeedHandler::modifySellOrder(OrderId orderId, Order&& order, Errors& errors
         }
         else
         {
-            block_.fill(
+            queue_.push_back(
                 Data(static_cast<char>(Parser::Action::MODIFY), static_cast<char>(Parser::Side::SELL), 
                      static_cast<unsigned int>(itAsks-asks_.begin()), *itAsks)
             );

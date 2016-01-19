@@ -60,8 +60,8 @@ int main(int argc, char **argv)
 //    mlockall(MCL_CURRENT|MCL_FUTURE);
 //    mlock(mmappedData, filesize);
     
-    CircularBlock<FeedHandler::Data> block;
-    FeedHandler feed(block);
+    WaitFreeQueue<FeedHandler::Data> queue;
+    FeedHandler feed(queue);
     Reporter reporter;
     Errors errors;
 #if 1 
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         auto counter = 0;
         while(1)
         {
-            if (likely(reporter.processData(block.empty())))
+            if (likely(reporter.processData(queue.pop_front())))
             {
                 ++counter;
                 if (counter > 10)
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose);
         sbuffer.seek(pos+1);
 #if 0
-        if (likely(reporter.processData(block.empty())))
+        if (likely(reporter.processData(queue.pop_front())))
         {
             ++counter;
             if (counter > 10)
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 #endif
     }
     high_resolution_clock::time_point end2 = high_resolution_clock::now();
-    block.dontSpin();
+    queue.dontSpin();
 #if 1
     thr.join();
 #endif    

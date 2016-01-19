@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "CircularBlock.h"
+#include "WaitFreeQueue.h"
 
 #include <unordered_map>
 #include <deque>
@@ -31,7 +31,7 @@ public:
         char pad2_[64] = "";
     };
     
-    FeedHandler(CircularBlock<Data>& block) : block_(block) {}
+    FeedHandler(WaitFreeQueue<Data>& queue) : queue_(queue) {}
     ~FeedHandler() = default;
     FeedHandler(const FeedHandler&) = delete;
     FeedHandler& operator=(const FeedHandler&) = delete;
@@ -51,6 +51,6 @@ protected:
     std::deque<Limit> bids_, asks_;
     std::unordered_map<OrderId, Order> buyOrders_, sellOrders_;
     
-    CircularBlock<Data>& block_;
+    WaitFreeQueue<Data>& queue_;
 };
 
