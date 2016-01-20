@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     FeedHandler feed(queue);
     Reporter reporter;
     Errors errors;
-#if 1 
+    
     auto threaded_reporter = [&]() 
     {
         auto counter = 0;
@@ -84,44 +84,36 @@ int main(int argc, char **argv)
         }
     };
     std::thread thr(threaded_reporter);
-#else
-    auto counter = 0;
-#endif
+    
     high_resolution_clock::time_point start2 = high_resolution_clock::now();
+    
     while(sbuffer.available())
     {
         auto pos = sbuffer.getPosition('\n');
         if (unlikely(pos < 0)) break;
         feed.processMessage(static_cast<const char*>(&sbuffer[0]), pos, errors, verbose);
         sbuffer.seek(pos+1);
-#if 0
-        if (likely(reporter.processData(queue.pop_front())))
-        {
-            ++counter;
-            if (counter > 10)
-            {
-                reporter.printCurrentOrderBook(std::cerr);
-                counter = 0;
-            }
-            reporter.printMidQuotesAndTrades(std::cerr, errors);
-        }
-#endif
     }
     high_resolution_clock::time_point end2 = high_resolution_clock::now();
     queue.dontSpin();
-#if 1
+    
     thr.join();
-#endif    
+    
     reporter.printCurrentOrderBook(std::cout);
     reporter.printErrors(std::cout, errors, verbose);
         
     high_resolution_clock::time_point end = high_resolution_clock::now();
     auto howlong2 = duration<double>(end2 - start2);
+    auto sec2 = duration_cast<seconds>(howlong2).count();
+    auto usec2 = duration_cast<microseconds>(howlong2).count();
+    
     auto howlong = duration<double>(end - start);
-    std::cout << "Overall run perfs: " << duration_cast<seconds>(howlong).count() << " sec "
-        << duration_cast<microseconds>(howlong).count() << " usec (building OB: " 
-        << duration_cast<seconds>(howlong2).count() << " sec "
-        << duration_cast<microseconds>(howlong2).count() << " usec)" << std::endl;
+    auto sec = duration_cast<seconds>(howlong).count();
+    auto usec = duration_cast<microseconds>(howlong).count();
+    
+    std::cout << "Overall run perfs: " << sec << " sec " << usec % 1'000'000 
+        << " usec (building OB: " << sec2 << " sec " << usec2  % 1'000'000 << " usec)"
+        << std::endl;
         
     munmap(mmappedData, filesize);
     close(fd);

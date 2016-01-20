@@ -1,0 +1,192 @@
+Background:
+===========
+
+An exchange feed for a given financial instrument (stock, future, option,
+etc.) is a sequence of messages describing two distinct objects: orders and
+trades. Orders are offers by market participants to buy (sell) up to a given
+quantity at or below (above) a specified price. Generally there are a number
+of orders to buy at low prices, and a number of orders to sell at high prices,
+since everybody is trying to get a good deal. If at any point the exchange has
+a buy order and a sell order at the same price, the two orders are 'matched'
+with each other, producing a trade for the smaller of the two order
+quantities.
+
+If there are multiple orders that could be matched against each other, the
+orders are matched first to the best possible price (i.e., the lowest-price
+sell or the highest-price buy order). In the (very common) event of a tie,
+orders are matched in time priority (first order to arrive will be filled
+first). For example, if the standing orders are
+
+price orders (oldest to newest, B = buy, S = sell)
+1100
+1075 S 1 // one order to sell up to 1 at 1075
+1050 S 10 // one order to sell up to 10 at 1050
+1025 S 2 S 5 // one order to sell up to 2 at 1025,
+// and second newer order to sell up to 5
+
+1000 B 9 B 1 // buy up to 9 at 1000, second to buy up to 1
+975 B 30 // buy up to 30 at 975
+950
+
+the best buy order is at a price of 1000, and the best sell order is at a
+price of 1025. Since no seller is willing to sell low enough to match a buyer,
+and no buyer is willing to buy high enough to match a seller, there is no
+match between any of the existing orders.
+
+If a new buy order arrives for a quantity of 3 at a price of 1050, there will
+be a match. The only sells that are willing to sell at or below a price of
+1050 are the S10, the S2, and the S5. Since the S2 and S5 are at a better
+price, the new order will match first against those. Since the S2 arrived
+first, the new order will match against the full S2 and produce a trade of
+2. However, the 1 remaining quantity will still match the S5, so it matches
+and produces a trade of 1, and the S5 becomes an S4. Two trade messages will
+be generated when this happens, indicating a trade of size 2 at price 1025,
+and a trade of size 1 at price 1025. Two order-related messages will also be
+generated: one to remove the S2, and one to note the modification of the S5
+down to an S4. The new set of standing orders will be:
+
+price orders
+1100
+1075 S 1 
+1050 S 10 
+1025 S 4
+
+1000 B 9 B 1 
+975 B 30 
+950
+
+Note that if a new sell order arrives at a price of 1025, it will be placed to
+the right of the S4 (i.e., behind it in the queue). Also, although there are
+only a few price levels shown here, you should bear in mind that buys and
+sells can arrive at any price level.
+
+Messages:
+=========
+
+The types of messages that can arrive on the exchange feed are as follows:
+
+Order: action,orderid,side,quantity,price (e.g., A,123,B,9,1000)
+action = A (add), X (remove), M (modify)
+orderid = unique positive integer to identify each order;
+used to reference existing orders for remove/modify
+side = B (buy), S (sell)
+quantity = positive integer indicating maximum quantity to buy/sell
+price = double indicating max price at which to buy/min price to sell
+
+Trade: action,quantity,price (e.g., T,2,1025)
+action = T (trade)
+quantity = amount that traded
+price = price at which the trade happened
+
+Example:
+========
+
+The following set of messages builds the initial book from the example in the
+Background section above. Note that order 100004 is canceled, so it doesn't
+appear in the book above.
+
+A,100000,S,1,1075
+A,100001,B,9,1000
+A,100002,B,30,975
+A,100003,S,10,1050
+A,100004,B,10,950
+A,100005,S,2,1025
+A,100006,B,1,1000
+X,100004,B,10,950 // cancel
+A,100007,S,5,1025
+
+The following sequence of additional messages represents the new order and
+subsequent trades, removes, and modifies that happens in the second part of
+the Background example above:
+
+A,100008,B,3,1050
+T,2,1025
+T,1,1025
+X,100008,B,3,1050
+X,100005,S,2,1025
+M,100007,S,4,1025 // order is modified down to reflect quantity traded
+
+The state of the book after these messages is shown at the end of the
+Background section.
+
+Problem:
+========
+
+(1) Given a sequence of messages, as defined above, construct an in-memory
+representation of the current state of the order book. You will need to
+generate your own dataset to test your code.
+
+(2) Write out a human-readable representation of the book every 10th message.
+
+(3) Write out a machine-readable sequence of 'midquotes' (average of best buy
+and best sell order prices) on every message. For example, the correct
+sequence of midquotes for the messages given in the first part of the Example
+above is
+
+NAN // no buys yet, so midquote is undefined
+1037.5 // = (1075. + 1000.)/2.0
+1037.5 // new buy at 975 is lower than best, so midquote doesn't change
+1025 // = (1050. + 1000.)/2.0 (new sell is at a better price than old)
+1025 // new buy at 950 is lower than best, so midquote doesn't change
+1012.5 // = (1025. + 1000.)/2.0 (new sell is again lower than best)
+1012.5 // new buy at 1000 changes quantity, but not midquote
+1012.5 // cancel of old buy at 950 (less than best) doesn't change midquote
+1012.5 // new sell at 1025 adds to quantity, but again doesn't change best
+
+(4) Write out the total quantity traded at the most recent trade price on
+every trade message. For example
+
+message => output
+T,2,1025 => 2@1025
+T,1,1025 => 3@1025
+T,1,1000 => 1@1000 // quantity resets when new trade price is seen
+T,1,1025 => 1@1025 // doesn't remember the previous trades @1025
+
+(5) Your code should be clean, easy to understand, efficient, and
+robust. Specifically, your program should not crash if it gets:
+
+a. corrupted messages
+b. duplicated order ids (duplicate adds)
+c. trades with no corresponding order
+d. removes with no corresponding order
+e. best sell order price at or below best buy order price,
+but no trades occur
+f. negative, missing, or out-of-bounds prices, quantities, order ids
+
+You should note how often each of these cases occurs and print a summary when
+the program finishes processing all messages.
+
+(6) The following is a stub C++ program to get you started. Feel free to
+modify it as you see fit. You may use STL.
+*/
+
+#include 
+#include 
+#include 
+
+class FeedHandler
+{
+public:
+    FeedHandler();
+
+    void processMessage(const std::string &line);
+    void printCurrentOrderBook(std::ostream &os) const;
+};
+
+int main(int argc, char **argv)
+{
+    FeedHandler feed;
+    std::string line;
+    const std::string filename(argv[1]);
+    std::ifstream infile(filename.c_str(), ios::in);
+    int counter = 0;
+    while (std::getline(infile, line)) {
+        feed.processMessage(line);
+        if (++counter % 10 == 0) {
+            feed.printCurrentOrderBook(std::cerr);
+        }
+    }
+    feed.printCurrentOrderBook(std::cout);
+    return 0;
+}
+

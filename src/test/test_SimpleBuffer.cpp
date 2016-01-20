@@ -126,7 +126,7 @@ int main()
     auto time_span3 = 0ULL;
     rc::check("Read files line by line", [&]()
     {
-        std::string filename("test_FeedHandler.cpp");
+        std::string filename("../../tests/test6.txt");
         std::ifstream infile1(filename, std::ios::in);
         infile1.sync_with_stdio(false);
         SimpleBuffer sbuffer;

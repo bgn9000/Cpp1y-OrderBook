@@ -25,7 +25,7 @@ all: $(TARGETS)
 clean:
 	rm -f *.out
 
-test:
+test: clean all
 	@for target in $(TARGETS); do  \
 	    ./$$target;    \
 	done 

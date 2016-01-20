@@ -23,7 +23,7 @@ using namespace std::chrono;
 class rcFeedHandler : public FeedHandler
 {
 public:
-    rcFeedHandler(CircularBlock<Data>& block) : FeedHandler(block)
+    rcFeedHandler(WaitFreeQueue<Data>& queue) : FeedHandler(queue)
     {
     }
     
@@ -141,12 +141,12 @@ int main(int argc, char **argv)
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     
-    CircularBlock<FeedHandler::Data> block;
-    block.dontSpin();
-    rcFeedHandler FH(block);
+    WaitFreeQueue<FeedHandler::Data> queue;
+    queue.dontSpin();
+    rcFeedHandler FH(queue);
     rcReporter report;
     
-    rcFeedHandler FH_prefilled(block);
+    rcFeedHandler FH_prefilled(queue);
     rcReporter report_prefilled;
     
 #if 0
@@ -217,13 +217,13 @@ int main(int argc, char **argv)
                 FH_prefilled.newBuyOrder(buyOrderId, Order{qty, buyPrice}, errors, verbose);
                 high_resolution_clock::time_point end = high_resolution_clock::now();
                 time_span1 += duration_cast<nanoseconds>(end - start).count();
-                ret = report_prefilled.processData(block.empty());
+                ret = report_prefilled.processData(queue.pop_front());
                 
                 start = high_resolution_clock::now();
                 FH_prefilled.newSellOrder(sellOrderId, Order{qty, sellPrice}, errors, verbose);
                 end = high_resolution_clock::now();
                 time_span2 += duration_cast<nanoseconds>(end - start).count();
-                ret &= report_prefilled.processData(block.empty());
+                ret &= report_prefilled.processData(queue.pop_front());
                 
                 buyOrderId += 2;
                 sellOrderId += 2;
@@ -343,13 +343,13 @@ int main(int argc, char **argv)
         FH.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbBids() == FH.uniqueBidPrices.size());
         RC_ASSERT(report.getNbBids() == FH.uniqueBidPrices.size());
         FH.newSellOrder(orderId, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH.getNbSellOrders() == 0U);
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
         FH_prefilled.newBuyOrder(orderId, Order{qty, price}, errors, verbose);        
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbBuyOrders() == FH_prefilled.buyOrders.size());
         RC_ASSERT(FH_prefilled.getNbBids() == FH_prefilled.uniqueBidPrices.size());
@@ -428,13 +428,13 @@ int main(int argc, char **argv)
         FH.newSellOrder(orderId, Order{qty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
         RC_ASSERT(report.getNbAsks() == FH.uniqueAskPrices.size());
         FH.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
@@ -451,7 +451,7 @@ int main(int argc, char **argv)
         FH_prefilled.newSellOrder(orderId, Order{qty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbSellOrders() == FH_prefilled.sellOrders.size());
         RC_ASSERT(FH_prefilled.getNbAsks() == FH_prefilled.uniqueAskPrices.size());
@@ -511,7 +511,7 @@ int main(int argc, char **argv)
         FH.newBuyOrder(sameOrderId, std::forward<Order>(sameOrder), errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
@@ -526,7 +526,7 @@ int main(int argc, char **argv)
         FH_prefilled.newBuyOrder(sameOrderId, std::forward<Order>(sameOrder), errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == false);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH_prefilled.getNbBuyOrders() == FH_prefilled.buyOrders.size());
@@ -562,7 +562,7 @@ int main(int argc, char **argv)
         FH.newSellOrder(sameOrderId, std::forward<Order>(sameOrder), errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -577,7 +577,7 @@ int main(int argc, char **argv)
         FH_prefilled.newSellOrder(sameOrderId, std::forward<Order>(sameOrder), errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == false);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH_prefilled.getNbSellOrders() == FH_prefilled.sellOrders.size());
@@ -617,13 +617,13 @@ int main(int argc, char **argv)
         FH.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbBids() == FH.uniqueBidPrices.size());
         RC_ASSERT(report.getNbBids() == FH.uniqueBidPrices.size());
         FH.newSellOrder(orderId, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -640,7 +640,7 @@ int main(int argc, char **argv)
         FH_prefilled.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbBuyOrders() == FH_prefilled.buyOrders.size());
         RC_ASSERT(FH_prefilled.getNbBids() == FH_prefilled.uniqueBidPrices.size());
@@ -702,13 +702,13 @@ int main(int argc, char **argv)
         FH.newSellOrder(orderId, Order{qty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbBids() == FH.uniqueBidPrices.size());
         RC_ASSERT(report.getNbBids() == FH.uniqueBidPrices.size());
         FH.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.duplicateOrderIds);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -725,7 +725,7 @@ int main(int argc, char **argv)
         FH_prefilled.newSellOrder(orderId, Order{qty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbSellOrders() == FH_prefilled.sellOrders.size());
         RC_ASSERT(FH_prefilled.getNbAsks() == FH_prefilled.uniqueAskPrices.size());
@@ -783,13 +783,13 @@ int main(int argc, char **argv)
         FH.modifyBuyOrder(orderId, Order{newqty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbBids() == FH.uniqueBidPrices.size());
         RC_ASSERT(report.getNbBids() == FH.uniqueBidPrices.size());
         FH.modifySellOrder(orderId, Order{newqty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.modifiesWithUnknownOrderId);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -798,7 +798,7 @@ int main(int argc, char **argv)
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.modifyBuyOrder(orderId+2000, Order{newqty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.modifiesWithUnknownOrderId);
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
@@ -806,7 +806,7 @@ int main(int argc, char **argv)
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.modifyBuyOrder(orderId, Order{newqty, price+0.1}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.modifiesNotMatchedPrice);
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
@@ -822,7 +822,7 @@ int main(int argc, char **argv)
         FH_prefilled.modifyBuyOrder(orderId, Order{newqty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbBuyOrders() == FH_prefilled.buyOrders.size());
         RC_ASSERT(FH_prefilled.getNbBids() == FH_prefilled.uniqueBidPrices.size());
@@ -879,13 +879,13 @@ int main(int argc, char **argv)
         FH.modifySellOrder(orderId, Order{newqty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
         RC_ASSERT(report.getNbAsks() == FH.uniqueAskPrices.size());
         FH.modifyBuyOrder(orderId, Order{newqty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.modifiesWithUnknownOrderId);
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
@@ -894,7 +894,7 @@ int main(int argc, char **argv)
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.modifySellOrder(orderId+2000, Order{newqty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.modifiesWithUnknownOrderId);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -902,7 +902,7 @@ int main(int argc, char **argv)
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.modifySellOrder(orderId, Order{newqty, price+0.1}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.modifiesNotMatchedPrice);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -918,7 +918,7 @@ int main(int argc, char **argv)
         FH_prefilled.modifySellOrder(orderId, Order{newqty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbSellOrders() == FH_prefilled.sellOrders.size());
         RC_ASSERT(FH_prefilled.getNbAsks() == FH_prefilled.uniqueAskPrices.size());
@@ -981,19 +981,19 @@ int main(int argc, char **argv)
         
         Errors errors;
         FH.cancelBuyOrder(orderId+2000, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsWithUnknownOrderId);
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.cancelBuyOrder(orderId, Order{qty+1, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsNotMatchedQtyOrPrice);
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.cancelBuyOrder(orderId, Order{qty, price+0.1}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsNotMatchedQtyOrPrice);
         
@@ -1002,13 +1002,13 @@ int main(int argc, char **argv)
         FH.cancelBuyOrder(orderId, Order{qty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbBuyOrders() == FH.buyOrders.size());
         RC_ASSERT(FH.getNbBids() == FH.uniqueBidPrices.size());
         RC_ASSERT(report.getNbBids() == FH.uniqueBidPrices.size());
         FH.cancelSellOrder(orderId, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsWithUnknownOrderId);
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
@@ -1036,7 +1036,7 @@ int main(int argc, char **argv)
         FH_prefilled.cancelBuyOrder(orderId, Order{qty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbBuyOrders() == FH_prefilled.buyOrders.size());
         RC_ASSERT(FH_prefilled.getNbBids() == FH_prefilled.uniqueBidPrices.size());
@@ -1078,19 +1078,19 @@ int main(int argc, char **argv)
         
         Errors errors;
         FH.cancelSellOrder(orderId+2000, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsWithUnknownOrderId);
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.cancelSellOrder(orderId, Order{qty+1, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsNotMatchedQtyOrPrice);
         
         memset((void*)&errors, 0, sizeof(Errors));
         FH.cancelSellOrder(orderId, Order{qty, price+0.1}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsNotMatchedQtyOrPrice);
         
@@ -1099,13 +1099,13 @@ int main(int argc, char **argv)
         FH.cancelSellOrder(orderId, Order{qty, price}, errors, verbose);
         high_resolution_clock::time_point end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report.processData(block.empty()) == true);
+        RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH.getNbSellOrders() == FH.sellOrders.size());
         RC_ASSERT(FH.getNbAsks() == FH.uniqueAskPrices.size());
         RC_ASSERT(report.getNbAsks() == FH.uniqueAskPrices.size());
         FH.cancelBuyOrder(orderId, Order{qty, price}, errors, verbose);
-        RC_ASSERT(report.processData(block.empty()) == false);
+        RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(1ULL == errors.cancelsWithUnknownOrderId);
         RC_ASSERT(FH.getNbBuyOrders() == 0U);
@@ -1135,7 +1135,7 @@ int main(int argc, char **argv)
         FH_prefilled.cancelSellOrder(orderId, Order{qty, price}, errors, verbose);
         end = high_resolution_clock::now();
         time_span2 += duration_cast<nanoseconds>(end - start).count();
-        RC_ASSERT(report_prefilled.processData(block.empty()) == true);
+        RC_ASSERT(report_prefilled.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
         RC_ASSERT(FH_prefilled.getNbSellOrders() == FH_prefilled.sellOrders.size());
         RC_ASSERT(FH_prefilled.getNbAsks() == FH_prefilled.uniqueAskPrices.size());

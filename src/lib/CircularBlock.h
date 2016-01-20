@@ -54,7 +54,6 @@ protected:
     size_t last_ = CAPACITY-1;
     std::atomic<size_t> size_{0UL};
     
-//too long compilation time for large array:    std::array<T, CAPACITY> array_;
-    std::vector<T> array_{CAPACITY};
+    std::array<T, CAPACITY> array_;
 };
 
