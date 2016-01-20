@@ -14,7 +14,12 @@ OBJECTS:=$(addprefix $(OBJ_DIR)/, $(SOURCES:.cpp=.o))
 
 INCS=-I.
 
-CFLAGS=-O2 -m64 -fPIC -g -ggdb
+ifneq "" "$(GCC_MAXSPEED_OPTIMIZATION)"
+    CFLAGS_OPTIM := $(GCC_MAXSPEED_OPTIMIZATION)
+else
+    CFLAGS_OPTIM := -O2
+endif
+CFLAGS=$(CFLAGS_OPTIM) -m64 -fPIC -g -ggdb
 CFLAGS += -std=c++1y -D_REENTRANT -DLinux -pedantic-errors -Wconversion -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function
 
 ifneq "" "$(findstring $(sanitize), 1 on On ON)"
