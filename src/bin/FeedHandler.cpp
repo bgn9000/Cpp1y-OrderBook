@@ -290,14 +290,14 @@ bool FeedHandler::newBuyOrder(OrderId orderId, FeedHandler::Order&& order, Error
         {
             return (getPrice(l) > p);
         });
-    if (getPrice(*itBids) == getPrice(order))
-    {
-        getQty(*itBids) += getQty(order);
-    }
-    else
+    if (itBids == bids_.end() || getPrice(*itBids) != getPrice(order))
     {
         bids_.insert(itBids, order);
     }
+    else
+    {
+        getQty(*itBids) += getQty(order);
+    }    
     buyOrders_.emplace(orderId, std::move(order));
     return true;
 }
@@ -316,13 +316,13 @@ bool FeedHandler::newSellOrder(OrderId orderId, FeedHandler::Order&& order, Erro
         {
             return (getPrice(l) < p);
         });
-    if (getPrice(*itAsks) == getPrice(order))
-    {
-        getQty(*itAsks) += getQty(order);
-    }
-    else
+    if (itAsks == asks_.end() || getPrice(*itAsks) != getPrice(order))
     {
         asks_.insert(itAsks, order);
+    }
+    else    
+    {
+        getQty(*itAsks) += getQty(order);
     }
     sellOrders_.emplace(orderId, std::move(order));
     return true;

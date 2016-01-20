@@ -82,8 +82,9 @@ int main(int argc, char **argv)
         
     high_resolution_clock::time_point end = high_resolution_clock::now();
     auto howlong = duration<double>(end - start);
-    std::cout << "Overall run perfs: " << duration_cast<seconds>(howlong).count() << " sec "
-        << duration_cast<microseconds>(howlong).count() << " usec " << std::endl;
+    auto sec = duration_cast<seconds>(howlong).count();
+    auto usec = duration_cast<microseconds>(howlong).count();
+    std::cout << "Overall run perfs: " << sec << " sec " << usec % 1'000'000 << " usec " << std::endl;
         
     munmap(mmappedData, filesize);
     close(fd);
