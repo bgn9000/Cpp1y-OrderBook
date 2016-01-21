@@ -2,7 +2,7 @@
 from __future__ import print_function
 from random import *
 import sys
-sys.path.append('../tools/OrderBook/orderbook')
+sys.path.append('../tools/OrderBook-stable_20160119/orderbook')
 from orderbook import OrderBook
 
 def generate_new_buy(trade_id):

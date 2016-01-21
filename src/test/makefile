@@ -9,7 +9,7 @@ endif
 SOURCES:=$(shell ls *.cpp)
 TARGETS:=$(SOURCES:.cpp=.out)
 
-INCS=-I../lib -I../bin -I../../tools/rapidcheck/include
+INCS=-I../lib -I../bin -I../../tools/rapidcheck-stable_20160119/include
 
 ifneq "" "$(GCC_MAXSPEED_OPTIMIZATION)"
     CFLAGS_OPTIM := $(GCC_MAXSPEED_OPTIMIZATION)
@@ -23,7 +23,7 @@ ifneq "" "$(findstring $(sanitize), 1 on On ON)"
     CFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null 
 endif
 
-LIBS = -L ../bin -lFeedHandler -L ../lib -lTools -L ../../tools/rapidcheck/build -lrapidcheck -latomic -lz -lnsl -lpthread -ldl -lrt
+LIBS = -L ../bin -lFeedHandler -L ../lib -lTools -L ../../tools/rapidcheck-stable_20160119/build -lrapidcheck -latomic -lz -lnsl -lpthread -ldl -lrt
 
 all: $(TARGETS)
 
