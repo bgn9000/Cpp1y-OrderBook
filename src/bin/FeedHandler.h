@@ -23,12 +23,12 @@ public:
         Data(Data&& data) = default;
         Data& operator=(Data&& data) = default;
         
-        char pad1_[64] = "";
+        char pad1_[cacheLinesSze] = "";
         char action_ = 0;
         char side_ = 0;
         unsigned int pos_ = 0;
         Limit limit_{0, 0.0};
-        char pad2_[64] = "";
+        char pad2_[cacheLinesSze] = "";
     };
     
     FeedHandler(WaitFreeQueue<Data>& queue) : queue_(queue) {}
