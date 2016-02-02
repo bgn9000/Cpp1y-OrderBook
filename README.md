@@ -1,5 +1,5 @@
 
-# Take Home Test (C++1y OrderBook)
+# Take Home Test (C++14 OrderBook)
 
 
 ## Background
@@ -225,7 +225,7 @@ pip install cython
 pip install bintrees
 ```
 
-#### C++1y Orderbook 
+#### C++14 Orderbook 
 
 - Build the project into `src` folder (only `lib` and `bin` folders):
 ```
@@ -253,7 +253,7 @@ cd python
 ./genOrders.py > test.log 2> test.txt
 ```
 
-- Run C++1y Orderbook: pick one `test.txt`
+- Run C++14 Orderbook: pick one `test.txt`
 ```
 bin/FeedHandler.out ../tests/test3.txt > results.txt 2>&1
 grep Overall results.txt 
@@ -321,7 +321,7 @@ Here is the list of reported errors (in Common.h):
 ### Main development choices
 
 - Since 3.5 years, I am very focused on C++ new features.
-Now, I am not using boost anymore (too much complexity) even if we can find some interesting advanced data structures (`shared array, intrusive containers, lockfree algo, fibers, ...`). I prefer to focus on C++1y which is cleaner and easier to read. 
+Now, I am not using boost anymore (too much complexity) even if we can find some interesting advanced data structures (`shared array, intrusive containers, lockfree algo, fibers, ...`). I prefer to focus on C++14 which is cleaner and easier to read. 
 Boost performance is not guarantee (like `shared_array` or `lexical_cast`).
 
 - **Only order quantity can be modified** (neither price nor order id, in that case I expect cancel and add new order).
