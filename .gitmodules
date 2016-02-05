@@ -1,0 +1,4 @@
+[submodule "rapidcheck"]
+	path = ext/rapidcheck
+	url = https://github.com/furuholm/rapidcheck.git
+	branch = parallel_testing
