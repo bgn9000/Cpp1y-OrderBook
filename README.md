@@ -224,7 +224,7 @@ To generate new test cases with `tools/genOrders.py`, you need to install Python
         pip install cython
         pip install bintrees
 
-You can odify `genOrders.py` and run it (generated messages will output into stderr):
+You can modify `genOrders.py` and run it (generated messages will output into stderr):
 
     cd python
     ./genOrders.py > test.log 2> test.txt
