@@ -202,29 +202,17 @@ Python: Python 2.7.6 (default, Jun 22 2015, 17:58:13)
 
 ### Tools & Dependencies
 
-- **RapidCheck** (to run generated unit tests):
+- **RapidCheck** (to run generated unit tests) from [emil](https://github.com/emil-e) and recently improved by [furuholm](https://github.com/furuholm) (Recommended reading: [Generating test cases so you don’t have to](https://labs.spotify.com/2015/06/25/rapid-check))
 
-> Thanks to [emil](https://github.com/emil-e), I recommand to read this: [link](https://labs.spotify.com/2015/06/25/rapid-check)
-
-You can download the version I used [here](https://github.com/bgn9000/rapidcheck/archive/stable_20160119.tar.gz)
-
-- Python OrderBook (to generate new tests cases) :
-
-> Thanks to [dyn4mik3](https://github.com/dyn4mik3)
-
-You can download the version I used [here](https://github.com/bgn9000/OrderBook/archive/stable_20160119.tar.gz)
-
-
-### Test cases
-
-To generate new test cases with `tools/genOrders.py`, you need to install Python OrderBook:
-- Download (wget url) and untar into a local folder `tools`
-- Install `bintrees` (needs cython installed before, if not reinstall bintrees):
+- **Python OrderBook** (to generate tests cases) from [dyn4mik3](https://github.com/dyn4mik3)
+  depends on `bintrees` (requiring cython to be installed before)
 
         pip install cython
         pip install bintrees
 
-You can modify `genOrders.py` and run it (generated messages will output into stderr):
+### Test cases
+
+You can modify `genOrders.py` and run it (generated messages will output into stderr)
 
     cd python
     ./genOrders.py > test.log 2> test.txt
