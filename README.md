@@ -1,6 +1,18 @@
 
 # Take Home Test (C++14 OrderBook)
 
+## Clone, build and test
+
+Arguments between [square brakets] are optional.
+
+    git clone git@github.com:olibre/Cpp14-OrderBook.git --recursive [--depth 1]
+    cd Cpp14-OrderBook
+    mkdir build
+    cd    build
+    cmake .. -DCMAKE_BUILD_TYPE=Release [-Dsanitize=ON] [-DGCC_MAXSPEED_OPTIMIZATION=-Ofast]
+    make [FeedHandler.out] [VERBOSE=1]
+    make test
+
 
 ## Background
 
