@@ -1,6 +1,6 @@
 #include <rapidcheck.h>
 
-#include "CircularBlock.h"
+#include "utils/CircularBlock.h"
 
 #include <thread>
 #include <future>

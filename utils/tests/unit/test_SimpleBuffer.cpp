@@ -1,6 +1,6 @@
 #include <rapidcheck.h>
 
-#include "SimpleBuffer.h"
+#include "utils/SimpleBuffer.h"
 
 #include <sys/mman.h>
 #include <fcntl.h>

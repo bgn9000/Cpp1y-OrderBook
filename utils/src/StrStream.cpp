@@ -1,6 +1,5 @@
-#include "StrStream.h"
-
-#include "Decoder.h"
+#include "utils/StrStream.h"
+#include "utils/Decoder.h"
 
 #include <cstring>
 

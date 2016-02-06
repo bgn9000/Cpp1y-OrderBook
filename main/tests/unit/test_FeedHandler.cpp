@@ -1,9 +1,9 @@
 //#include <gtest/gtest.h>
 #include <rapidcheck.h>
 
-#include "FeedHandler.h"
-#include "Reporter.h"
-#include "StrStream.h"
+#include <FeedHandler.h>
+#include <Reporter.h>
+#include <utils/StrStream.h>
 
 #include <cmath>
 #include <cstring>

@@ -1,7 +1,7 @@
 #include "FeedHandler.h"
 
-#include "Parser.h"
-#include "StrStream.h"
+#include <utils/Parser.h>
+#include <utils/StrStream.h>
 
 void FeedHandler::processMessage(const char* data, size_t dataLen, Errors& errors, const int verbose)
 {

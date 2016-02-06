@@ -1,7 +1,7 @@
 #include <rapidcheck.h>
 
-#include "Parser.h"
-#include "Decoder.h"
+#include "utils/Parser.h"
+#include "utils/Decoder.h"
 
 #include <cmath>
 #include <cstring>

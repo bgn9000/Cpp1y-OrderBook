@@ -1,6 +1,6 @@
 #include "FeedHandler.h"
 #include "Reporter.h"
-#include "SimpleBuffer.h"
+#include <utils/SimpleBuffer.h>
 
 #include <cstring>
 

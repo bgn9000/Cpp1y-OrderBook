@@ -1,8 +1,7 @@
 #pragma once
 
-#include "FiniteStr.h"
-#include "Common.h"
-
+#include "utils/FiniteStr.h"
+#include "utils/Common.h"
 using namespace common;
 
 #include <iostream>

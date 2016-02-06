@@ -1,7 +1,7 @@
 #include "Reporter.h"
 
-#include "Parser.h"
-#include "StrStream.h"
+#include <utils/Parser.h>
+#include <utils/StrStream.h>
 
 bool Reporter::processData(FeedHandler::Data&& data)
 {

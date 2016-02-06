@@ -1,6 +1,6 @@
 #include <rapidcheck.h>
 
-#include "StrStream.h"
+#include "utils/StrStream.h"
 
 #include <cmath>
 #include <sstream>

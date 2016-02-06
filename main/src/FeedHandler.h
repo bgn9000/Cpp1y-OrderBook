@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common.h"
-#include "WaitFreeQueue.h"
+#include "utils/Common.h"
+#include "utils/WaitFreeQueue.h"
 
 #include <unordered_map>
 #include <deque>

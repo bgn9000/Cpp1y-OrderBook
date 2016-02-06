@@ -1,6 +1,6 @@
 #include <rapidcheck.h>
 
-#include "Decoder.h"
+#include "utils/Decoder.h"
 
 #include <cmath>
 #include <cstring>
