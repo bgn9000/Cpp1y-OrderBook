@@ -215,64 +215,27 @@ You can download the version I used [here](https://github.com/bgn9000/rapidcheck
 You can download the version I used [here](https://github.com/bgn9000/OrderBook/archive/stable_20160119.tar.gz)
 
 
-### How to run the project?
+### Test cases
 
-#### Optional
-
-To build unit tests inside `src/tests` you need rapidcheck installed:
-- Download (wget url) and untar into a local folder `tools` (same level as `src`)
-- Build rapidcheck library:
-```
-mkdir build
-cd build
-cmake ..
-make -j
-```
-
-To generate new test cases with `python/genOrders.py`, you need to install Python OrderBook:
-- Download (wget url) and untar into a local folder `tools` (same level as `src`)
+To generate new test cases with `tools/genOrders.py`, you need to install Python OrderBook:
+- Download (wget url) and untar into a local folder `tools`
 - Install `bintrees` (needs cython installed before, if not reinstall bintrees):
-```
-pip install cython
-pip install bintrees
-```
 
-#### C++14 Orderbook 
+        pip install cython
+        pip install bintrees
 
-- Build the project into `src` folder (only `lib` and `bin` folders):
-```
-cd src
-make -j
-```
+You can odify `genOrders.py` and run it (generated messages will output into stderr):
 
-- To (re)build everything (including `test`) and run all unit tests:
-```
-cd src
-make test
-```
+    cd python
+    ./genOrders.py > test.log 2> test.txt
 
-- To compile only unit tests:
-```
-cd src/test; 
-make -j
-```
+Run C++14 Orderbook: pick one `test.txt`
 
-- Run unit tests: pick one `.out` binary.
+    build/main/FeedHandler.out main/tests/perf/test3.txt > results.txt 2>&1
+    grep Overall results.txt 
+    => Overall run perfs: 0 sec 5247 usec (building OB: 0 sec 854 usec)
 
-- Generate test cases: modify `genOrders.py` and run it (generated messages will output into stderr):
-```
-cd python
-./genOrders.py > test.log 2> test.txt
-```
-
-- Run C++14 Orderbook: pick one `test.txt`
-```
-bin/FeedHandler.out ../tests/test3.txt > results.txt 2>&1
-grep Overall results.txt 
-=> Overall run perfs: 0 sec 5247 usec (building OB: 0 sec 854 usec)
-```
-
-- At the end, the program is writting a summary of errors found.
+At the end, the program is writting a summary of errors found.
 
 For test3.txt
 ``` 
