@@ -1,8 +1,10 @@
 #! /usr/bin/python
+
 from __future__ import print_function
 from random import *
-import sys
-sys.path.append('ext/OrderBook/orderbook')
+
+import sys, os
+sys.path.append( os.path.join( os.path.dirname(sys.path[0]), 'ext', 'OrderBook', 'orderbook' ) )
 from orderbook import OrderBook
 
 def generate_new_buy(trade_id):
@@ -163,5 +165,4 @@ for trade_id in xrange(1000, 500000):
 print(order_book)
 
 # quit()
-
 
