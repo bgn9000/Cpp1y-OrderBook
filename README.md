@@ -80,6 +80,7 @@ This project uses two external tools present in submodules
         pip install bintrees
 
   or
+
         sudo apt install python-pip
         pip install cython
         pip install bintrees
