@@ -56,35 +56,39 @@ if( CMAKE_BUILD_TYPE STREQUAL "Coverage" )
     add_compile_options( --coverage )
     link_libraries(      --coverage )
     add_definitions( -DNDEBUG )  # Disable assert to avoid code coverage bias
-else()
-    if( MARCH STREQUAL "native" )
-        if( CMAKE_COMPILER_IS_GNUCXX )
-            EXECUTE_PROCESS( COMMAND ${CMAKE_CXX_COMPILER} -march=native -Q --help=target COMMAND awk "/-march=/{ printf $2}" OUTPUT_VARIABLE march_native )
-            message(STATUS "** MARCH is native and compiler is GNU => Detected processor '${march_native}' => -march=${march_native}")
-            add_compile_options( -march=${march_native} )
-        else()
-            message(STATUS "** MARCH is native and compiler is *not* GNU => -march=native")
-            add_compile_options( -march=native )
-        endif()
-    elseif( MARCH )
-        message(STATUS "** MARCH is not native => -march=${MARCH}")
-        add_compile_options( -march=${MARCH} )
-    else()
-        message(STATUS "** MARCH is empty => Do not set flag -march")
-    endif()
 endif()
 
 if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
     add_definitions(-D_GLIBCXX_DEBUG_PEDANTIC)
 endif()
 
-# Set -O0/-Og/-O1/-O2/-O3/-Ofast ...
+
+## Compilation flag -march ##
+
+if( MARCH STREQUAL "native" )
+    if( CMAKE_COMPILER_IS_GNUCXX )
+        EXECUTE_PROCESS( COMMAND ${CMAKE_CXX_COMPILER} -march=native -Q --help=target COMMAND awk "/-march=/{ printf $2}" OUTPUT_VARIABLE march_native )
+        message(STATUS "** MARCH is native and compiler is GNU => Detected processor '${march_native}' => -march=${march_native}")
+        add_compile_options( -march=${march_native} )
+    else()
+        message(STATUS "** MARCH is native and compiler is *not* GNU => -march=native")
+        add_compile_options( -march=native )
+    endif()
+elseif( MARCH )
+    message(STATUS "** MARCH is not native => -march=${MARCH}")
+    add_compile_options( -march=${MARCH} )
+else()
+    message(STATUS "** MARCH is empty => Do not set flag -march")
+endif()
+
+
+## Compilation flag -O0/-Og/-O1/-O2/-O3/-Ofast ##
 if( OPTIM )
     message(STATUS "** OPTIM is set to ${OPTIM} => Add it as compilation flag")
     add_compile_options( ${OPTIM} )
 endif()
 
-# Speed up build if ccache installed
+## Speed up build if ccache installed ##
 find_program( path_ccache ccache )
 if( path_ccache )
     message(STATUS "** Command 'ccache' detected => Will use 'ccache' to speed up compilation and link" )
@@ -97,22 +101,31 @@ endif()
 add_compile_options( -pipe )
 link_libraries(      -pipe )
 
-# For clang-check
-set(CMAKE_EXPORT_COMPILE_COMMANDS "on")
 
 # External dependency for unit tests
 add_subdirectory(ext/rapidcheck)
 enable_testing()
 
+
+## Static code analysis ##
+# Generate file 'compile_commands.json' for clang-check
+# Usage: awk -F: '/"file"/{print $2 }' build/compile_commands.json | xargs clang-check -fixit -p build
+set(CMAKE_EXPORT_COMPILE_COMMANDS "on")
+
+
+## Instrument code for run-time analysis ##
+if(SANITIZE)
+    add_compile_options(-fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null)
+endif()
+
+
 # Warnings
 add_compile_options(-Wall -Wextra -Wswitch-enum -Wno-ignored-qualifiers -Weffc++ -pedantic -pedantic-errors -Wconversion -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function) #-Wpadded
+
 
 # Full debug info for all CMAKE_BUILD_TYPE
 add_compile_options( -g3 -ggdb3 )    # -g3 -> include also the MACRO definitions
 
-if(SANITIZE)
-    add_compile_options(-fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=shift -fsanitize=integer-divide-by-zero -fsanitize=null)
-endif()
 
 # Source code
 add_subdirectory(utils)
