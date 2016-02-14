@@ -120,7 +120,7 @@ endif()
 
 
 # Warnings
-add_compile_options(-Wall -Wextra -Wswitch-enum -Wno-ignored-qualifiers -Weffc++ -pedantic -pedantic-errors -Wconversion -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function) #-Wpadded
+add_compile_options(-Wall -Wextra -Wswitch-enum -Wno-ignored-qualifiers -pedantic -pedantic-errors -Wconversion -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function) #-Wpadded
 
 
 # Full debug info for all CMAKE_BUILD_TYPE

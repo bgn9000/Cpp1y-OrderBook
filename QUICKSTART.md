@@ -4,16 +4,33 @@ Clone, build and test
 Quick way
 
     git clone git@github.com:bgn9000/Cpp1y-OrderBook.git --recursive --depth 1
-    cd Cpp14-OrderBook
+    cd Cpp1y-OrderBook
     mkdir build
     cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    CC=gcc-5 CXX=g++-5 cmake .. -DCMAKE_BUILD_TYPE=Release
     make -j8
     make test
 
-Clonning the Git repository use option `--recursive` because of submodules. But you can ommit the option `--depth 1`.
+Cloning the Git repository use option `--recursive` because of submodules. But you can ommit the option `--depth 1`.
 
     git clone git@github.com:bgn9000/Cpp1y-OrderBook.git --recursive
+
+To upgrade cmake (needs upper than 3.1 whereas ubuntu 14.04 provides only cmake 2.8)
+    
+    git clone https://cmake.org/cmake.git
+    cd cmake
+    git checkout v3.4.3
+    cmake .
+    make
+    
+You can use checkinstall as this creates a DEB package.
+
+    sudo apt-get install checkinstall
+    sudo checkinstall
+    
+or
+
+    make install
 
 You can also build in Debug mode.
 
@@ -70,7 +87,7 @@ This project uses two external tools present in submodules
   Recommended reading: [Generating test cases so you don’t have to](https://labs.spotify.com/2015/06/25/rapid-check)
   (RapidCheck also depends on another tool, [Catch](https://github.com/philsquared/Catch), present in another submodule within RapidCheck's sub-directory `ext`)
 
-2. [**Python OrderBook**](https://github.com/dyn4mik3/OrderBook) to generate test cases, written by [dyn4mik3](https://github.com/dyn4mik3) with recent help from [Philippe Bourgeon](https://github.com/bgn9000)
+2. [**Python OrderBook**](https://github.com/dyn4mik3/OrderBook) to generate test cases, written by [dyn4mik3](https://github.com/dyn4mik3) with recent help from [bgn9000](https://github.com/bgn9000)
   depends on `bintrees` (requiring cython to be installed before)
 
         sudo apt install python-pip cython
