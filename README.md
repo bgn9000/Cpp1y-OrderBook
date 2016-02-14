@@ -1,12 +1,194 @@
+C++14 OrderBook
+===============
 
-# Take Home Test (C++14 OrderBook)
+Clone, build and test
+---------------------
+
+Quick way
+
+    git clone git@github.com:olibre/Cpp14-OrderBook.git --recursive --depth 1
+    cd Cpp14-OrderBook
+    mkdir build
+    cd    build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    make -j8
+    make test
+
+Clonning the Git repository use option `--recursive` because of submodules. But you can ommit the option `--depth 1`.
+
+    git clone git@github.com:olibre/Cpp14-OrderBook.git --recursive
+
+You can also build in Debug mode.
+
+    cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+Option `sanitize=ON` let you run the static code analysis.
+
+    cmake .. -Dsanitize=ON
+
+Instead of building `all` just build the final executable and its dependencies.
+
+    make FeedHandler.out
+
+Use `VERBOSE=1` to display the full command lines during build.
+
+    make VERBOSE=1
+
+If [`ninja`](https://github.com/ninja-build/ninja) is available, you can use it instead of `gmake`.
+
+    cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    ninja
+    ninja test
+
+Use `ninja -v` to display the full command lines during build.
+
+Use `cmake --build .` and `ctest` as an abstraction of the specific build tool (`ninja` or `make`)
+
+    cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    cmake --build .
+    ctest
+
+    cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    cmake --build . --target FeedHandler.out
+
+You can also select another compiler.
+
+    CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake --build .
+    ctest
+
+    export CC=clang
+    export CXX=clang++
+    cmake .. -Dsanitize=ON -G Ninja
+    cmake --build .
 
 
-## Background
+Dependencies
+------------
 
-An exchange feed for a given financial instrument (stock, future, option, etc.) is a sequence of messages describing two distinct objects: `orders and trades`. 
+This project uses two external tools present in submodules  
+(the submodules are located in sub-directory `ext`)
 
-Orders are offers by market participants to buy (sell) up to a given quantity at or below (above) a specified price. Generally there are a number of orders to buy at low prices, and a number of orders to sell at high prices, since everybody is trying to get a good deal. If at any point the exchange has a buy order and a sell order at the same price, the two orders are 'matched' with each other, producing a trade for the smaller of the two order quantities.
+1. [**RapidCheck**](https://github.com/furuholm/rapidcheck) to run unit-tests, written by [emil-e](https://github.com/emil-e) and recently improved by [Tobias Furuholm](https://github.com/furuholm)  
+  Recommended reading: [Generating test cases so you don’t have to](https://labs.spotify.com/2015/06/25/rapid-check)  
+  (RapidCheck also depends on another tool, [Catch](https://github.com/philsquared/Catch), present in another submodule within RapidCheck's sub-directory `ext`)
+
+2. [**Python OrderBook**](https://github.com/dyn4mik3/OrderBook) to generate test cases, written by [dyn4mik3](https://github.com/dyn4mik3) with recent help from [Philippe Bourgeon](https://github.com/bgn9000)  
+  depends on `bintrees` (requiring cython to be installed before)
+
+        sudo apt install python-pip cython
+        pip install bintrees
+
+  or
+
+        sudo apt install python-pip
+        pip install cython
+        pip install bintrees
+
+Test cases
+----------
+
+Use `genOrders.py` to generate messages.
+
+    tools/genOrders.py 2>test.txt | tee test.log
+
+* Result is written to stderr
+* On-going information is written to stdout
+
+Executable output
+-----------------
+
+Use your own `test.txt` or use one of the available test cases in `main/tests/perf/test*.txt`
+
+The executable `FeedHandler.out` ends by writting a summary of errors found.
+
+The test case `test1.txt` contains commented/blank lines and a cross not followed by a trade.
+These allow verifying the repporter module.
+
+    $ build/main/FeedHandler.out main/tests/perf/test1.txt 2>result1.txt
+    Verbose is 0 : default is 0, param '-v 1 or higher' to activate it
+    Full Bids/Asks:
+    0     : 15 @ 1000.000000                18 @ 1000.000000
+    1     : 30 @ 975.000000                 4 @ 1025.000000
+    2     : empty                           10 @ 1050.000000
+    3     : empty                           1 @ 1075.000000
+    4     : empty                           empty
+    Summary:
+     [4] commented lines
+     [5] blank lines
+    Found 1 error:
+     [1] best bid equal or upper than best ask
+    No critical error found
+    Overall run perfs: 0 sec 410 usec (building OB: 0 sec 115 usec)
+
+The last line `Overall` provide some benchmarks.
+
+The test case `test2.txt` is cleaner.
+
+    $ build/main/FeedHandler.out main/tests/perf/test2.txt 2>result2.txt
+    Verbose is 0 : default is 0, param '-v 1 or higher' to activate it
+    Full Bids/Asks:
+    0     : 476 @ 909.000000                368 @ 960.000000
+    1     : 154 @ 902.000000                446 @ 972.000000
+    2     : 365 @ 900.000000                679 @ 992.000000
+    3     : empty                           429 @ 998.000000
+    4     : empty                           340 @ 1013.000000
+    5     : empty                           337 @ 1035.000000
+    6     : empty                           386 @ 1151.000000
+    7     : empty                           583 @ 1178.000000
+    8     : empty                           500 @ 1181.000000
+    9     : empty                           699 @ 1194.000000
+    10    : empty                           empty
+    Summary:
+    No error found
+    No critical error found
+    Overall run perfs: 0 sec 1307 usec (building OB: 0 sec 815 usec)
+
+List of reported CRITICAL and other errors  
+(see functions `nbCriticalErrors()` and `nbErrors()` in `Common.h`)
+
+- MODIFY LIMIT QUANTITY TOO LOW
+- MODIFY LIMIT NOT FOUND
+- CANCEL LIMIT QUANTITY TOO LOW
+- CANCEL LIMIT NOT FOUND
+
+- corrupted messages
+- incomplete messages
+- wrong actions
+- wrong sides
+- negative order ID
+- negative quantitie
+- negative price
+- missing action
+- missing order ID
+- missing side
+- missing quantity
+- missing price
+- zero Order ID
+- zero quantity
+- zero price
+- out of bounds Order ID
+- out of bounds quantity
+- out of bounds price
+- duplicate Order ID
+- modify with unknown Order ID
+- modify not matched price
+- cancel with unknown Order ID
+- cancel not matched quantity or price
+- best bid equal or greater than best ask
+
+
+Mechanism
+----------
+
+An exchange feed conveys messages describing two distinct objects: *Orders* and *Trades*.
+
+*Orders* are offers by market participants to buy or sell up to a given quantity at a specified price.
+An order book represents the current orders: generally there are orders to buy at low prices, and orders to sell at high prices.
+Orders can be created, modified and cancelled during the trading day.
+
+*Trade* is produced when a buy order price is equal or greater than a sell order price, the two orders are 'matched' with each other.
+The trade quantity corresponds to the smaller of the two order quantities.
 
 If there are multiple orders that could be matched against each other, the orders are matched first to the best possible price (i.e., the lowest-price sell or the highest-price buy order). In the (very common) event of a tie, orders are matched in time priority (first order to arrive will be filled first). For example, if the standing orders are:
 
@@ -25,31 +207,32 @@ price orders (oldest to newest, B = buy, S = sell)
 
 The best buy order is at a price of `1000`, and the best sell order is at a price of `1025`. Since no seller is willing to sell low enough to match a buyer, and no buyer is willing to buy high enough to match a seller, there is no match between any of the existing orders.
 
-- If a new buy order arrives for a quantity of `3` at a price of `1050`, there will be a match. 
-- The only sells that are willing to sell at or below a price of `1050` are the `S10`, the `S2`, and the `S5`. 
-- Since the `S2` and `S5` are at a better price, the new order will match first against those. 
-- Since the `S2` arrived first, the new order will match against the full `S2` and produce a trade of `2`. 
-- However, the `1` remaining quantity will still match the `S5`, so it matches and produces a trade of `1`, and the `S5` becomes an `S4`. 
-- Two trade messages will be generated when this happens, indicating a trade of size `2` at price `1025`, and a trade of size `1` at price `1025`. 
+- If a new buy order arrives for a quantity of `3` at a price of `1050`, there will be a match.
+- The only sells that are willing to sell at or below a price of `1050` are the `S10`, the `S2`, and the `S5`.
+- Since the `S2` and `S5` are at a better price, the new order will match first against those.
+- Since the `S2` arrived first, the new order will match against the full `S2` and produce a trade of `2`.
+- However, the `1` remaining quantity will still match the `S5`, so it matches and produces a trade of `1`, and the `S5` becomes an `S4`.
+- Two trade messages will be generated when this happens, indicating a trade of size `2` at price `1025`, and a trade of size `1` at price `1025`.
 - Two order-related messages will also be generated: one to remove the `S2`, and one to note the modification of the `S5` down to an `S4`.
 
 The new set of standing orders will be:
 ```
 price orders
 1100
-1075 S 1 
-1050 S 10 
+1075 S 1
+1050 S 10
 1025 S 4
 
-1000 B 9 B 1 
-975 B 30 
+1000 B 9 B 1
+975 B 30
 950
 ```
 
 Note that if a new sell order arrives at a price of `1025`, it will be placed to the right of the `S4` (i.e., behind it in the queue). Also, although there are only a few price levels shown here, you should bear in mind that buys and sells can arrive at any price level.
 
 
-### Messages
+Messages
+--------
 
 The types of messages that can arrive on the exchange feed are as follows:
 
@@ -69,7 +252,8 @@ price = price at which the trade happened
 ```
 
 
-### Example
+Example
+-------
 
 The following set of messages builds the initial book from the example in the `Background` section above. Note that order `100004` is canceled, so it doesn't appear in the book above.
 
@@ -99,9 +283,10 @@ M,100007,S,4,1025 // order is modified down to reflect quantity traded
 The state of the book after these messages is shown at the end of the `Background` section.
 
 
-## Problem
+Problem
+-------
 
-(1) Given a sequence of messages, as defined above, construct an **in-memory** representation of the current state of the order book. 
+(1) Given a sequence of messages, as defined above, construct an **in-memory** representation of the current state of the order book.
 You will need to generate your own dataset to test your code.
 
 (2) Write out a human-readable representation of the book every 10th message.
@@ -120,7 +305,7 @@ NAN // no buys yet, so midquote is undefined
 1012.5 // new sell at 1025 adds to quantity, but again doesn't change best
 ```
 
-(4) Write out the total quantity traded at the most recent trade price on every trade message. 
+(4) Write out the total quantity traded at the most recent trade price on every trade message.
 For example:
 
 ```
@@ -174,7 +359,8 @@ int main(int argc, char **argv)
 ```
 
 
-## Solution
+Solution
+--------
 
 
 ### Dev environment
@@ -188,145 +374,15 @@ Python: Python 2.7.6 (default, Jun 22 2015, 17:58:13)
 ```
 
 
-### Tools & Dependencies
-
-- **RapidCheck** (to run generated unit tests):
-
-> Thanks to [emil](https://github.com/emil-e), I recommand to read this: [link](https://labs.spotify.com/2015/06/25/rapid-check)
-
-You can download the version I used [here](https://github.com/bgn9000/rapidcheck/archive/stable_20160119.tar.gz)
-
-- Python OrderBook (to generate new tests cases) :
-
-> Thanks to [dyn4mik3](https://github.com/dyn4mik3)
-
-You can download the version I used [here](https://github.com/bgn9000/OrderBook/archive/stable_20160119.tar.gz)
-
-
-### How to run the project?
-
-#### Optional
-
-To build unit tests inside `src/tests` you need rapidcheck installed:
-- Download (wget url) and untar into a local folder `tools` (same level as `src`)
-- Build rapidcheck library:
-```
-mkdir build
-cd build
-cmake ..
-make -j
-```
-
-To generate new test cases with `python/genOrders.py`, you need to install Python OrderBook:
-- Download (wget url) and untar into a local folder `tools` (same level as `src`)
-- Install `bintrees` (needs cython installed before, if not reinstall bintrees):
-```
-pip install cython
-pip install bintrees
-```
-
-#### C++14 Orderbook 
-
-- Build the project into `src` folder (only `lib` and `bin` folders):
-```
-cd src
-make -j
-```
-
-- To (re)build everything (including `test`) and run all unit tests:
-```
-cd src
-make test
-```
-
-- To compile only unit tests:
-```
-cd src/test; 
-make -j
-```
-
-- Run unit tests: pick one `.out` binary.
-
-- Generate test cases: modify `genOrders.py` and run it (generated messages will output into stderr):
-```
-cd python
-./genOrders.py > test.log 2> test.txt
-```
-
-- Run C++14 Orderbook: pick one `test.txt`
-```
-bin/FeedHandler.out ../tests/test3.txt > results.txt 2>&1
-grep Overall results.txt 
-=> Overall run perfs: 0 sec 5247 usec (building OB: 0 sec 854 usec)
-```
-
-- At the end, the program is writting a summary of errors found.
-
-For test3.txt
-``` 
-Summary:
-No error found
-No critical error found
-```
-
-For test1.txt, I added a cross not followed by a trade at the end, and I put comments and blank lines which are not really errors.
-```
-Summary:
- [4] commented lines
- [5] blank lines
-Found 1 error:
- [1] best bid equal or upper than best ask
-No critical error found
-```
-
-Here is the list of reported errors (in Common.h):
-```C++
-        unsigned long long nbErrors()
-        {
-            return  corruptedMessages +
-                    IncompleteMessages +
-                    wrongActions +
-                    wrongSides +
-                    negativeOrderIds +
-                    negativeQuantities +
-                    negativePrices +
-                    missingActions +
-                    missingOrderIds +
-                    missingSides +
-                    missingQuantities +
-                    missingPrices +
-                    zeroOrderIds +
-                    zeroQuantities +
-                    zeroPrices +
-                    outOfBoundsOrderIds +
-                    outOfBoundsQuantities +
-                    outOfBoundsPrices +
-                    duplicateOrderIds +
-                    modifiesWithUnknownOrderId +
-                    modifiesNotMatchedPrice +
-                    cancelsWithUnknownOrderId +
-                    cancelsNotMatchedQtyOrPrice +
-                    bestBidEqualOrUpperThanBestAsk;
-        }
-        
-        unsigned long long nbCriticalErrors()
-        {
-            return  modifiesLimitQtyTooLow +
-                    modifiesLimitNotFound +
-                    cancelsLimitQtyTooLow +
-                    cancelsLimitNotFound;
-        }
-```
-
 ### Main development choices
 
 - Since 3.5 years, I am very focused on C++ new features.
-Now, I am not using boost anymore (too much complexity) even if we can find some interesting advanced data structures (`shared array, intrusive containers, lockfree algo, fibers, ...`). I prefer to focus on C++14 which is cleaner and easier to read. 
-Boost performance is not guarantee (like `shared_array` or `lexical_cast`).
+  Many parts of boost are becoming less interresting since C++11 and C++14 new features (keywords and STL).
+  Therefore this project does not use Boost but rely on C++14 which is cleaner and easier to read.
 
 - **Only order quantity can be modified** (neither price nor order id, in that case I expect cancel and add new order).
 
-- First version was a monothreaded program (from reading input file, parsing messages, orderbook management then print results). 
+- First version was a monothreaded program (from reading input file, parsing messages, orderbook management then print results).
 => Make it simple and make it work then consider optimization.
 => Good design (KISS) helps to simplify later refactoring (like usage of `auto`).
 
@@ -339,7 +395,7 @@ Boost performance is not guarantee (like `shared_array` or `lexical_cast`).
 - Second version with two threads to separate critical path (parsing messages and orderbook management) versus print results.
 
 
-### Some benchmark results
+### Benchmark results
 
 #### Unit tests
 
@@ -389,7 +445,7 @@ Overall processing time for dual threads version is 1.448604 sec but for parsing
 
 #### Data structures
 
-In my past experience, I did several benchmarks with different data structures in order to come up with the most efficient in terms of access (insertion, deletion and searching) and user friendly in terms of readability (further maintenance and team adoption). 
+In my past experience, I did several benchmarks with different data structures in order to come up with the most efficient in terms of access (insertion, deletion and searching) and user friendly in terms of readability (further maintenance and team adoption).
 Of course, **there is no obvious perfect solution and it depends on situation and experience we have with the software**.
 
 Usually I prefer using straightforward `stl containers` like `map` (for orders) and `vector` (for limits) but I chose here `unordered_map` and `deque` to bring more performance for middle size orderbooks (around `10k to 100k` live orders which is high even for liquid instruments).
@@ -442,14 +498,14 @@ Then the overhead introduced by the dual thread design is negligeable compared t
             
             Make the critical path only doing critical
 
-This means we may consider multithreading if we have enough core (and optimally cores on different cpus for L3 cache): 
+This means we may consider multithreading if we have enough core (and optimally cores on different cpus for L3 cache):
 ```
 C++: std::thread::hardware_concurrency.
 cat /proc/cpuinfo
 cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list
 ```
 
-Even if the expected solution here doesn't specify a critical processing in the problem statements, I chose to separate in two threads (for simplicity of synchronisation): 
+Even if the expected solution here doesn't specify a critical processing in the problem statements, I chose to separate in two threads (for simplicity of synchronisation):
 - First one is parsing input messages and managing orders to allow a live limit orderbook.
 - Second one to receive updates (or events) to rebuild his own copy of the limit orderbook (and keep track of errors) and do all print tasks like a logging mechanism.
 

@@ -1,0 +1,8 @@
+[submodule "rapidcheck"]
+	path = ext/rapidcheck
+	url = https://github.com/furuholm/rapidcheck.git
+	branch = parallel_testing
+[submodule "ext/OrderBook"]
+	path = ext/OrderBook
+	url = https://github.com/dyn4mik3/OrderBook.git
+	branch = master
