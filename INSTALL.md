@@ -1,15 +1,18 @@
-Clone, build and test
----------------------
-
-Quick way
+Quick Start
+-----------
 
     git clone git@github.com:bgn9000/Cpp1y-OrderBook.git --recursive --depth 1
     cd Cpp1y-OrderBook
     mkdir build
     cd build
-    CC=gcc-5 CXX=g++-5 cmake .. -DCMAKE_BUILD_TYPE=Release
+    CC=gcc-5         # Optional if your default compiler
+    CXX=g++-5        # does not support C++14
+    cmake ..
     make -j8
     make test
+
+Clone
+-----
 
 Cloning the Git repository use option `--recursive` because of submodules. But you can ommit the option `--depth 1`.
 
@@ -32,29 +35,113 @@ or
 
     make install
 
-You can also build in Debug mode.
+Directory
+---------
 
-    cmake .. -DCMAKE_BUILD_TYPE=Debug
+Most of the time CMake generates files for the build tool in directory `build` and the build tool will produce its temporary and finals files within the same directory. But you can customize this directory:
 
-Option `sanitize=ON` let you run the static code analysis.
+    mkdir /my/build/path
+    ( cd  /my/build/path && cmake $OLDPWD )
+    make -C /my/build/path all
+    make -C /my/build/path test
 
-    cmake .. -Dsanitize=ON
+Target
+------
 
 Instead of building `all` just build the final executable and its dependencies.
 
     make FeedHandler.out
 
-Use `VERBOSE=1` to display the full command lines during build.
+Build Types
+-----------
+
+By default, build type is Release (`CMAKE_BUILD_TYPE=Release`) but you can also build in Debug mode:
+
+    cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+Or in Coverage mode:
+
+    cmake .. -DCMAKE_BUILD_TYPE=Coverage
+
+Compiler Cache
+--------------
+
+`ccache` can speed up compilation and link. If you clean and rebuild often, then you should install `ccache`. This project is configured to use it when available.
+
+    sudo apt install ccache
+    cd build
+    cmake ..
+    time make  # First build: ccache caches all compiler output
+    make clean
+    time make  # ccache detects same input and bypasses the compiler
+
+Options
+-------
+
+Option `CMAKE_EXPORT_COMPILE_COMMANDS` is enabled and will produce the file `compile_commands.json` during the compilation. This file can be then used by static code analysis tools as `clang-check`:
+
+    awk -F: '/"file"/{print $2 }' build/compile_commands.json | xargs clang-check -fixit -p build
+
+Option `SANITIZE=ON` let you run the run-time code analysis.
+
+    cmake .. -DSANITIZE=ON
+
+Option `MARCH` let you control the CFLAG `-march`. By default `MARCH=corei7` (`-march=corei7`). If `MARCH=native` CMake will request `gcc` the real *cpu-type* used in order to keep a reproductible build on another machine. Unset flag `-march` using empty option `MARCH=`.   
+
+    cmake .. -DMARCH=native  # Request gcc to provide the corresponding cpu-type
+    cmake .. -DMARCH=        # Disable flag -march
+
+Option `OPTIM` let you control the flags `-O0 -Og -O1 -Os -O2 -O3 -Ofast`.
+
+    cmake .. -DOPTIM=-Ofast
+
+By default this is disable and will used the `CMAKE_BUILD_TYPE` default flag:
+
+* `-O2` for Release
+* unset for Debug and Coverage
+
+Build Tool
+----------
+
+CMake does not build the project (i.e. CMake is not a compilation or a link tool).
+CMake generates files for a build tool as [gmake, nmake, ninja, Visual Studio...](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html).
+
+By default on CMake will generates Makefiles on Unix-like plateforms. To enable verbose mode use `VERBOSE=1` to display the full command lines during build.
 
     make VERBOSE=1
 
 If [`ninja`](https://github.com/ninja-build/ninja) is available, you can use it instead of `gmake`.
 
-    cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    cmake .. -G Ninja
     ninja
     ninja test
 
-Use `ninja -v` to display the full command lines during build.
+Use `ninja -v` for verbose mode (to display the full command lines during build).
+
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -G Ninja
+    ninja -v
+
+Use `cmake --build your-build-path` to abstract the build tool.
+
+    cmake .. -G "${MY_CMAKE_GENERATOR}"
+    cmake --build .
+
+Compiler
+--------
+
+You can also select another compiler.
+
+    CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake --build .
+    ctest
+
+    CC=clang
+    CXX=clang++
+    cmake .. -DSANITIZE=ON -G Ninja
+    cmake --build .
+
+Test
+----
 
 Use `cmake --build .` and `ctest` as an abstraction of the specific build tool (`ninja` or `make`)
 
@@ -65,16 +152,6 @@ Use `cmake --build .` and `ctest` as an abstraction of the specific build tool (
     cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
     cmake --build . --target FeedHandler.out
 
-You can also select another compiler.
-
-    CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release
-    cmake --build .
-    ctest
-
-    export CC=clang
-    export CXX=clang++
-    cmake .. -Dsanitize=ON -G Ninja
-    cmake --build .
 
  
 Dependencies
@@ -99,7 +176,7 @@ This project uses two external tools present in submodules
         pip install cython
         pip install bintrees
 
-Test cases
+Test Cases
 ----------
 
 Use `genOrders.py` to generate messages.
@@ -109,8 +186,7 @@ Use `genOrders.py` to generate messages.
 * Result is written to stderr
 * On-going information is written to stdout
 
-
-Executable output
+Executable Output
 -----------------
 
 Use your own `test.txt` or use one of the available test cases in `main/tests/perf/test*.txt`
@@ -197,4 +273,3 @@ Here is the list of reported errors (in Common.h):
                     cancelsLimitNotFound;
         }
 ```
-
