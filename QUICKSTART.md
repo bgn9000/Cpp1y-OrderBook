@@ -134,7 +134,7 @@ These allow verifying the reporter module.
     Found 1 error:
      [1] best bid equal or upper than best ask
     No critical error found
-    Overall run perfs: 0 sec 410 usec (building OB: 0 sec 115 usec)
+    Overall run perfs: 0 sec 13026 usec (building OB: 0 sec 52 usec)
 
 The last line `Overall` provide some benchmarks.
 
@@ -157,7 +157,7 @@ The test case `test2.txt` is cleaner.
     Summary:
     No error found
     No critical error found
-    Overall run perfs: 0 sec 1307 usec (building OB: 0 sec 815 usec)
+    Overall run perfs: 0 sec 895 usec (building OB: 0 sec 229 usec)
 
 Here is the list of reported errors (in Common.h):
 ```C++
