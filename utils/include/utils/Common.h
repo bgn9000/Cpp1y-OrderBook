@@ -10,6 +10,14 @@
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
+#ifdef _MSC_VER
+# define FORCE_INLINE __forceinline
+#elif defined(__clang__) || defined(__GNUC__)
+# define FORCE_INLINE inline __attribute__((__always_inline__))
+#else
+# define FORCE_INLINE inline
+#endif
+
 namespace common
 {
     static constexpr int cacheLinesSze = 64;

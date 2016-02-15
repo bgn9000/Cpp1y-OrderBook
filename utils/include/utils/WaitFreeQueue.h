@@ -6,11 +6,11 @@
 struct SpinLock
 {
     std::atomic<bool> lock_{false};
-    void unlock()
+    FORCE_INLINE void unlock()
     {
         std::atomic_store_explicit(&lock_, false, std::memory_order_release);
     }
-    void lock()
+    FORCE_INLINE void lock()
     {
         while(std::atomic_exchange_explicit(&lock_, true, std::memory_order_acquire))
              ; // spin until acquired

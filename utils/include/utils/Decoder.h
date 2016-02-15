@@ -18,7 +18,7 @@ namespace Decoder
         "09192939495969798999"
     };
 
-    inline void strreverse(char* begin, char* end)
+    FORCE_INLINE void strreverse(char* begin, char* end)
     {
         while (end > begin)
         {
@@ -31,7 +31,7 @@ namespace Decoder
     }
     
     template <typename T>
-    inline size_t convert_unsigned_integer(T val, char* str)
+    size_t convert_unsigned_integer(T val, char* str)
     {
         char* const begin = str;
         const char* entry;
@@ -66,7 +66,7 @@ namespace Decoder
     }
 
     template <typename T>
-    inline T retreive_unsigned_integer(const char* str, size_t size)
+    T retreive_unsigned_integer(const char* str, size_t size)
     {
         T val = 0;
         for (; size; --size, ++str)
@@ -78,7 +78,7 @@ namespace Decoder
     }
     
     template <typename T>
-    inline size_t convert_unsigned_float(char* str, T val, int precision)
+    size_t convert_unsigned_float(char* str, T val, int precision)
     {
         int pos = 0;
 
@@ -185,7 +185,7 @@ namespace Decoder
     }
     
     template <typename T>
-    inline T retreive_unsigned_float(const char* str, size_t size)
+    T retreive_unsigned_float(const char* str, size_t size)
     {
         if (size == 0) return 0;
                 

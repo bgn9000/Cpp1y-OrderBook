@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/Common.h"
+
 #include <string>
 #include <limits>
 
@@ -17,53 +19,53 @@ public:
     {
         str_[0] = 0;
     }
-    inline FiniteStr(char filler, size_t size);
+    FORCE_INLINE FiniteStr(char filler, size_t size);
     ~FiniteStr() = default;
     FiniteStr(const FiniteStr&) = delete;
     FiniteStr& operator=(const FiniteStr&) = delete;
     
-    size_t size() const
+    FORCE_INLINE size_t size() const
     {
         return size_;
     }
-    static size_t capacity()
+    FORCE_INLINE static size_t capacity()
     {
         return CAPACITY;
     }
-    inline void resize(size_t newSize);
-    inline void resize(size_t newSize, char filler);
+    FORCE_INLINE void resize(size_t newSize);
+    FORCE_INLINE void resize(size_t newSize, char filler);
 
-    void clear()
+    FORCE_INLINE void clear()
     {
         resize(0);
     }
 
-    const char* c_str() const
+    FORCE_INLINE const char* c_str() const
     {
         return str_;
     }
 
-    inline std::string toString() const;
+    FORCE_INLINE std::string toString() const;
 
-    char* begin()
+    FORCE_INLINE char* begin()
     {
         return &str_[0];
     }
-    char* end()
+    FORCE_INLINE char* end()
     {
         return &str_[ size_ ];
     }
     
-    const char* begin() const
+    FORCE_INLINE const char* begin() const
     {
         return &str_[0];
     }
-    const char* end() const
+    FORCE_INLINE const char* end() const
     {
         return &str_[ size_ ];
     }
 
-    inline void assign(const char* str, size_t len);
+    FORCE_INLINE void assign(const char* str, size_t len);
 
 private:
     size_t size_;
@@ -71,7 +73,7 @@ private:
     char   str_[ CAPACITY + 1 ]; // + 1 is for the trailing '\0'
 };
 
-template<size_t _capacity> inline
+template<size_t _capacity> FORCE_INLINE
 FiniteStr<_capacity>::FiniteStr(char filler, size_t size) :
     size_(size > CAPACITY ? CAPACITY : size)
 {
@@ -79,14 +81,14 @@ FiniteStr<_capacity>::FiniteStr(char filler, size_t size) :
     str_[size_] = 0;
 }
 
-template<size_t _capacity> inline
+template<size_t _capacity> FORCE_INLINE
 void FiniteStr<_capacity>::resize(size_t newSize)
 {
     size_ = (newSize > CAPACITY ? CAPACITY : newSize);
     str_[ size_ ] = 0;
 }
 
-template<size_t _capacity> inline
+template<size_t _capacity> FORCE_INLINE
 void FiniteStr<_capacity>::resize(size_t newSize, char filler)
 {
     size_t prevSize = size_;
@@ -98,13 +100,13 @@ void FiniteStr<_capacity>::resize(size_t newSize, char filler)
     str_[ size_ ] = 0;
 }
 
-template<size_t _capacity> inline
+template<size_t _capacity> FORCE_INLINE
 std::string FiniteStr<_capacity>::toString() const
 {
     return std::string(str_, size_);
 }
 
-template<size_t _capacity> inline
+template<size_t _capacity> FORCE_INLINE
 void FiniteStr<_capacity>::assign(const char* str, size_t len)
 {
     resize(len);

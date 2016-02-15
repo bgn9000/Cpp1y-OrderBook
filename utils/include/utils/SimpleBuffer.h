@@ -86,7 +86,7 @@ public :
             begin_=end_;
     }
     
-    inline int getPosition(const char c)
+    FORCE_INLINE int getPosition(const char c)
     {
         auto pos = begin_;
         for (; pos < end_; ++pos) 
