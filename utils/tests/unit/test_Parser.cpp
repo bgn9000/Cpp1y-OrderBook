@@ -5,9 +5,7 @@
 
 #include <cmath>
 #include <cstring>
-
 #include <chrono>
-using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
@@ -30,6 +28,10 @@ int main(int argc, char **argv)
         return std::string(*rc::gen::inRange(0, n), ' ');
     };
     
+    using std::chrono::high_resolution_clock;
+    high_resolution_clock::time_point start, end;
+    using std::chrono::nanoseconds;
+    using std::chrono::duration_cast;
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     rc::check("Skip comment lines", [&](std::string comment) 
@@ -38,10 +40,10 @@ int main(int argc, char **argv)
         {
             line = spaces(10) + "//" + spaces(10) + comment;
             Errors errors;
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             Parser parser;
             auto ret = parser.parse(line.c_str(), line.length(), errors, verbose);
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
             ++nbTests;
@@ -98,7 +100,7 @@ int main(int argc, char **argv)
         
         auto test_parse_stl = [&]() 
         {
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             auto pos = line.find_first_of("AXM");
             auto _action = line[pos];
             pos = line.find(',', pos+1);
@@ -112,7 +114,7 @@ int main(int argc, char **argv)
             pos = line.find(',', pos+1);
             pos2 = line.find(',', ++pos);
             auto _price = std::stod(line.substr(pos, pos2-pos));
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span2 += duration_cast<nanoseconds>(end - start).count();
             
             RC_ASSERT(action == _action);
@@ -126,9 +128,9 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
             RC_ASSERT(parser.getAction() == action);
@@ -673,7 +675,7 @@ int main(int argc, char **argv)
         
         auto test_parse_stl = [&]() 
         {
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             auto pos = line.find_first_of("T");
             auto _action = line[pos];
             pos = line.find(',', pos+1);
@@ -682,7 +684,7 @@ int main(int argc, char **argv)
             pos = line.find(',', pos+1);
             pos2 = line.find(',', ++pos);
             auto _price = std::stod(line.substr(pos, pos2-pos));
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span2 += duration_cast<nanoseconds>(end - start).count();            
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(action == _action);
@@ -694,9 +696,9 @@ int main(int argc, char **argv)
         {
             Errors errors;
             Parser parser;
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             bool ret = parser.parse(line.c_str(), line.length(), errors, verbose);
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             RC_LOG() << "line [" << line << ']' << std::endl;
             RC_ASSERT(action == parser.getAction());

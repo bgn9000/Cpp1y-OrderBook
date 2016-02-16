@@ -7,12 +7,15 @@
 
 #include <chrono>
 using namespace common;
-using namespace std::chrono;
 
 //#include <boost/lexical_cast.hpp>
 
 int main()
 {
+    using std::chrono::high_resolution_clock;
+    high_resolution_clock::time_point start, end;
+    using std::chrono::nanoseconds;
+    using std::chrono::duration_cast;
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     
@@ -22,9 +25,9 @@ int main()
         const auto len = strlen(str2);
         if (len > 0)
         {
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             std::reverse(std::begin(str), std::end(str)); 
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span1 += duration_cast<nanoseconds>(end - start).count();
             
             start = high_resolution_clock::now();
@@ -49,9 +52,9 @@ int main()
     {
         auto str = std::to_string(i);
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         auto ret = std::stoul(str);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
 //        RC_ASSERT(ret == i);
 
@@ -74,9 +77,9 @@ int main()
     nbTests = 0U;
     rc::check("Convert Quantity to string", [&](Quantity i) 
     {
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         auto str = std::to_string(i);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -104,9 +107,9 @@ int main()
         size_t size = Decoder::convert_unsigned_float<Price>(buf, d, std::numeric_limits<Price>::digits10);
 
         std::string strBuf(buf, size);
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         auto ret = std::stod(strBuf);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
 //        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<Price>::digits10));
         
@@ -150,9 +153,9 @@ int main()
         
         strBuf += buf;
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         ret = std::stod(strBuf);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
 //        RC_ASSERT(ret - d < std::pow(10, -std::numeric_limits<Price>::digits10));
         
@@ -181,11 +184,11 @@ int main()
     {
         auto d = *rc::gen::positive<Price>();
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
 //        auto str = std::to_string(d); // only 6 digits precision
         char buf[64] = {};
         sprintf(buf, "%.*e", std::numeric_limits<Price>::digits10, d);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();

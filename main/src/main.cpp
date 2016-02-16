@@ -11,7 +11,6 @@
 
 #include <thread>
 #include <chrono>
-using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
@@ -47,6 +46,7 @@ int main(int argc, char **argv)
     
 //    mlockall(MCL_FUTURE);
 
+    using std::chrono::high_resolution_clock;
     high_resolution_clock::time_point start = high_resolution_clock::now();
     
     void* mmappedData = mmap(0, filesize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
@@ -103,6 +103,10 @@ int main(int argc, char **argv)
     reporter.printErrors(std::cout, errors, verbose);
         
     high_resolution_clock::time_point end = high_resolution_clock::now();
+    using std::chrono::seconds;
+    using std::chrono::microseconds;
+    using std::chrono::duration;
+    using std::chrono::duration_cast;
     auto howlong2 = duration<double>(end2 - start2);
     auto sec2 = duration_cast<seconds>(howlong2).count();
     auto usec2 = duration_cast<microseconds>(howlong2).count();

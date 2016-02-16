@@ -6,12 +6,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-
 #include <chrono>
-using namespace std::chrono;
 
 int main()
 {
+    using std::chrono::high_resolution_clock;
+    high_resolution_clock::time_point start, end;
+    using std::chrono::nanoseconds;
+    using std::chrono::duration_cast;
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     rc::check("Append string", [&](std::string strOrigin, std::string strToAppend) 
@@ -24,11 +26,11 @@ int main()
             len = strOrigin.length() + strToAppend.length();
         }
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         SimpleBuffer sbuffer(len);
         sbuffer.push(strOrigin.c_str(), strOrigin.length());
         sbuffer.push(strToAppend.c_str(), strToAppend.length());
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -60,9 +62,9 @@ int main()
         SimpleBuffer sbuffer;
         sbuffer.push(str.c_str(), str.length());
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         auto pos1 = sbuffer.getPosition(c);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -97,10 +99,10 @@ int main()
         auto pos1 = sbuffer.getPosition(c);
         auto pos2 = str.find_first_of(c);
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         sbuffer.seek(pos1);
         sbuffer.pushOnLeft();
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -131,7 +133,7 @@ int main()
         infile1.sync_with_stdio(false);
         SimpleBuffer sbuffer;
         auto nbLignes1 = 0;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         while (infile1.good())
         {
             infile1.read(sbuffer.dataEnd(), sbuffer.freeSpace());
@@ -146,7 +148,7 @@ int main()
                 sbuffer.seek(pos+1);
             }
         }
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         std::ifstream infile2(filename, std::ios::in);

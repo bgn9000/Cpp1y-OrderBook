@@ -4,23 +4,25 @@
 
 #include <cmath>
 #include <sstream>
-
 #include <chrono>
-using namespace std::chrono;
 
 int main()
 {
+    using std::chrono::high_resolution_clock;
+    high_resolution_clock::time_point start, end;
+    using std::chrono::nanoseconds;
+    using std::chrono::duration_cast;
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     rc::check("Append same character until a specific position", [&]() 
-    {
+    {        
         auto c = *rc::gen::suchThat<char>([](char c) { return c > 31 && c < 127; });
         auto pos = *rc::gen::inRange<unsigned int>(1, StrStream::capacity()-1);
-        
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+
+        start = high_resolution_clock::now();
         StrStream strstream;
         strstream.append(pos, c);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -50,11 +52,11 @@ int main()
             len = strOrigin.length() + strToAppend.length();
         }
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         StrStream strstream;
         strstream.append(strOrigin.c_str(), strOrigin.length());
         strstream.append(strToAppend.c_str(), strToAppend.length());
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -82,9 +84,9 @@ int main()
         null << str; // dry run
         null.flush();
 
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         null.rdbuf()->sputn(str.c_str(), str.length());
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         null.flush();
 
@@ -108,10 +110,10 @@ int main()
     {        
         std::ofstream null("/dev/null");
         null.sync_with_stdio(false);
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         null.rdbuf()->sputn(str.c_str(), str.length());
         null.flush();
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         ++nbTests;
@@ -131,11 +133,11 @@ int main()
         size = *rc::gen::inRange<int>(StrStream::capacity()+1, 2*StrStream::capacity());
         auto strToAppend = *rc::gen::container<std::string>(size, rc::gen::character<typename std::string::value_type>());
     
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         StrStream strstream;
         strstream.append(strOrigin.c_str(), strOrigin.length());
         strstream.append(strToAppend.c_str(), strToAppend.length());
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -170,11 +172,11 @@ int main()
             len = strOrigin.length();
         }
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         StrStream strstream;
         strstream.append(strOrigin.c_str(), strOrigin.length());
         strstream << intToAppend;
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
@@ -207,11 +209,11 @@ int main()
             len = strOrigin.length();
         }
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         StrStream strstream;
         strstream.append(strOrigin.c_str(), strOrigin.length());
         strstream << doubleToAppend;
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         
         start = high_resolution_clock::now();
