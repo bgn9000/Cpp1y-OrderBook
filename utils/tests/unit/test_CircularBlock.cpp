@@ -5,9 +5,7 @@
 #include <thread>
 #include <future>
 #include <cassert>
-
 #include <chrono>
-using namespace std::chrono;
 
 size_t cache_line_size() {
     FILE * p = 0;
@@ -31,6 +29,10 @@ int main()
 {
     assert(cacheLinesSze == cache_line_size());
     
+    using std::chrono::high_resolution_clock;
+    high_resolution_clock::time_point start, end;
+    using std::chrono::nanoseconds;
+    using std::chrono::duration_cast;
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     rc::check("Basic fill and then empty", [&]() 
@@ -49,12 +51,12 @@ int main()
         }
         RC_ASSERT(0UL == block.getSize());
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         for (auto i = 1UL; i <= nb; ++i)
         {
             block.fill(i);
         }
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += (duration_cast<nanoseconds>(end - start).count()) / nb;
         RC_ASSERT(nb == block.getSize());
         
@@ -133,7 +135,7 @@ int main()
         std::cout << "Dual threads fill and empty perfs [" << time_span1/nbTests 
             << '|' << time_span2/nbTests << "] (in ns)" << std::endl;
     }
-    
+#if 0
     time_span1 = 0ULL, time_span2 = 0ULL;
     nbTests = 0U;
     rc::check("Dual threads fill and empty with aligned to cache lines (false sharing)", [&]() 
@@ -152,12 +154,12 @@ int main()
             thr1_ready.set_value();
             start.wait();
             auto j = Data();
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             for (auto i = 1UL; i <= nb; ++i)
             {
                 j = block.empty();
             }
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span2 += (duration_cast<nanoseconds>(end - start).count()) / nb;
         };
         std::thread thr1(threaded_emptyBlock);
@@ -166,13 +168,13 @@ int main()
         {
             thr2_ready.set_value();
             start.wait();
-            high_resolution_clock::time_point start = high_resolution_clock::now();
+            start = high_resolution_clock::now();
             for (auto i = 1UL; i <= nb; ++i)
             {
                 Data d; d.data_ = i;
                 block.fill(std::move(d));
             }
-            high_resolution_clock::time_point end = high_resolution_clock::now();
+            end = high_resolution_clock::now();
             time_span1 += (duration_cast<nanoseconds>(end - start).count()) / nb;
         };
         std::thread thr2(threaded_fillBlock);
@@ -193,6 +195,6 @@ int main()
             << '|' << time_span2/nbTests << "] (in ns)" << std::endl;
     }
     
-    
+#endif    
     return 0;
 }

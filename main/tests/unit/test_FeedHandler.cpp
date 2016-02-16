@@ -15,10 +15,9 @@
 #include <future>
 #include <condition_variable>
 #include <mutex>
-
 #include <chrono>
+
 using namespace common;
-using namespace std::chrono;
 
 class rcFeedHandler : public FeedHandler
 {
@@ -138,6 +137,10 @@ int main(int argc, char **argv)
     std::cout << "Alignment for Price = "  << alignof(Price) << std::endl;
     std::cout << "Alignment for Limit = "  << alignof(Limit) << " whereas size is " << sizeof(Limit) << std::endl;
     
+    using std::chrono::high_resolution_clock;
+    high_resolution_clock::time_point start, end;
+    using std::chrono::nanoseconds;
+    using std::chrono::duration_cast;
     auto time_span1 = 0ULL, time_span2 = 0ULL;
     auto nbTests = 0U;
     
@@ -153,10 +156,10 @@ int main(int argc, char **argv)
     std::deque<double> bids;
     auto insertBids = [&](double price)
     {
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         auto itBids = std::lower_bound(bids.begin(), bids.end(), price, std::greater<double>());
         bids.insert(itBids, price);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
 //        std::cout << " " << duration_cast<nanoseconds>(end - start).count();
     };
@@ -174,10 +177,10 @@ int main(int argc, char **argv)
     std::deque<double> asks;
     auto insertAsks = [&](double price)
     {
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         auto itAsks = std::lower_bound(asks.begin(), asks.end(), price);
         asks.insert(itAsks, price);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
 //        std::cout << " " << duration_cast<nanoseconds>(end - start).count();
     };
@@ -213,9 +216,9 @@ int main(int argc, char **argv)
                 FH_prefilled.buyOrders[buyOrderId] = Order{qty, buyPrice};
                 FH_prefilled.sellOrders[sellOrderId] = Order{qty, sellPrice};
                 
-                high_resolution_clock::time_point start = high_resolution_clock::now();
+                start = high_resolution_clock::now();
                 FH_prefilled.newBuyOrder(buyOrderId, Order{qty, buyPrice}, errors, verbose);
-                high_resolution_clock::time_point end = high_resolution_clock::now();
+                end = high_resolution_clock::now();
                 time_span1 += duration_cast<nanoseconds>(end - start).count();
                 ret = report_prefilled.processData(queue.pop_front());
                 
@@ -258,9 +261,9 @@ int main(int argc, char **argv)
     {
         auto nbDepths = std::max(FH_prefilled.getNbBids(), FH_prefilled.getNbAsks());
         
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report_prefilled.printCurrentOrderBook();
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "\nPrint prefilled (" << nbDepths << ") orderbook perfs\t\t\t: [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
                 
@@ -339,9 +342,9 @@ int main(int argc, char **argv)
             << "BUY orderId [" << orderId << "] qty [" << qty << "] price [" << price << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -396,9 +399,9 @@ int main(int argc, char **argv)
     }
     
     {
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report.printCurrentOrderBook(verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "Print half filled orderbook (" << FH.getNbBids() << ") perfs : [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
@@ -424,9 +427,9 @@ int main(int argc, char **argv)
             << "SELL orderId [" << orderId << "] qty [" << qty << "] price [" << price << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.newSellOrder(orderId, Order{qty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -482,9 +485,9 @@ int main(int argc, char **argv)
     
     {
         auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report.printCurrentOrderBook(verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
@@ -507,9 +510,9 @@ int main(int argc, char **argv)
             << "] same price [" << getPrice(sameOrder) << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.newBuyOrder(sameOrderId, std::forward<Order>(sameOrder), errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -558,9 +561,9 @@ int main(int argc, char **argv)
             << "] same price [" << getPrice(sameOrder) << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.newSellOrder(sameOrderId, std::forward<Order>(sameOrder), errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == false);
         RC_ASSERT(1UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -613,9 +616,9 @@ int main(int argc, char **argv)
             << "Add New BUY orderId [" << orderId << "] qty [" << qty << "] same price [" << price << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.newBuyOrder(orderId, Order{qty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -670,9 +673,9 @@ int main(int argc, char **argv)
     }
     {
         auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report.printCurrentOrderBook(verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
@@ -698,9 +701,9 @@ int main(int argc, char **argv)
             << "Add New SELL orderId [" << orderId << "] qty [" << qty << "] same price [" << price << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.newSellOrder(orderId, Order{qty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -755,9 +758,9 @@ int main(int argc, char **argv)
     }
     {
         auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report.printCurrentOrderBook(verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
@@ -779,9 +782,9 @@ int main(int argc, char **argv)
             << "Modify BUY orderId [" << orderId << "] new qty [" << newqty << "] price [" << price << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.modifyBuyOrder(orderId, Order{newqty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -852,9 +855,9 @@ int main(int argc, char **argv)
     }
     {
         auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report.printCurrentOrderBook(verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
@@ -875,9 +878,9 @@ int main(int argc, char **argv)
             << "Modify SELL orderId [" << orderId << "] new qty [" << newqty << "] price [" << price << "]" << std::endl;
         
         Errors errors;
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.modifySellOrder(orderId, Order{newqty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -948,9 +951,9 @@ int main(int argc, char **argv)
     }
     {
         auto nbDepths = std::max(FH.getNbBids(), FH.getNbAsks());
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         report.printCurrentOrderBook(verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         std::cout << "Print (" << nbDepths << ") orderbook perfs : [" 
             << duration_cast<nanoseconds>(end - start).count() << "] (in ns)" << std::endl;
     }
@@ -998,9 +1001,9 @@ int main(int argc, char **argv)
         RC_ASSERT(1ULL == errors.cancelsNotMatchedQtyOrPrice);
         
         memset((void*)&errors, 0, sizeof(Errors));
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.cancelBuyOrder(orderId, Order{qty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
@@ -1095,9 +1098,9 @@ int main(int argc, char **argv)
         RC_ASSERT(1ULL == errors.cancelsNotMatchedQtyOrPrice);
         
         memset((void*)&errors, 0, sizeof(Errors));
-        high_resolution_clock::time_point start = high_resolution_clock::now();
+        start = high_resolution_clock::now();
         FH.cancelSellOrder(orderId, Order{qty, price}, errors, verbose);
-        high_resolution_clock::time_point end = high_resolution_clock::now();
+        end = high_resolution_clock::now();
         time_span1 += duration_cast<nanoseconds>(end - start).count();
         RC_ASSERT(report.processData(queue.pop_front()) == true);
         RC_ASSERT(0UL == errors.nbErrors() + errors.nbCriticalErrors());
