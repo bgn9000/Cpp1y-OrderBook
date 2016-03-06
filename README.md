@@ -188,9 +188,9 @@ Python: Python 2.7.6 (default, Jun 22 2015, 17:58:13)
 ```
 
 
-### How to run the project?
+### Build
 
-[read Quick Start](QUICKSTART.md)
+See [INSTALL](INSTALL.md) instructions.
 
 
 ### Main development choices
